@@ -65,7 +65,7 @@ export default function RegisterPage() {
                 body: JSON.stringify({ email: formData.email, otp }),
             });
 
-            if (res.ok) {
+            if (res.ok) { 
                 setStatus("success");
                 // Beri jeda 2 detik agar user bisa lihat pesan sukses sebelum pindah
                 setTimeout(() => router.push("/auth/login?verified=true"), 2000);

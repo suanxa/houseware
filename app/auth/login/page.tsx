@@ -17,27 +17,31 @@ export default function LoginPage() {
     setStatus("loading");
     setErrorMessage("");
 
-    const result = await signIn("credentials", {
-      email,
-      password, // Kirim password
-      redirect: false,
-    });
+    try {
+      // Di v5, kita bisa langsung redirect dari sisi server
+      // Ganti 'redirect: false' menjadi 'true' untuk testing
+      const result = await signIn("credentials", {
+        email,
+        password,
+        redirect: false, 
+      });
 
-    if (result?.ok) {
-      setStatus("success");
-      
-      const response = await fetch("/api/auth/session");
-      const session = await response.json();
-      const role = session?.user?.role;
-
-      if (role) {
-        router.push(`/dashboard/${role}`);
-      } else {
-        router.push("/dashboard/pelanggan");
+      if (result?.error) {
+        setStatus("error");
+        setErrorMessage("Email atau Password salah.");
+        return;
       }
-    } else {
+
+      // Jika berhasil, gunakan window.location untuk "force refresh" session
+      // Ini jauh lebih aman daripada fetch session manual
+      if (result?.ok) {
+        setStatus("success");
+        window.location.href = "/dashboard/pelanggan"; 
+      }
+    } catch (err) {
+      console.error("Login Error:", err);
       setStatus("error");
-      setErrorMessage(result?.error || "Gagal masuk. Periksa email dan password Anda.");
+      setErrorMessage("Terjadi kesalahan sistem.");
     }
   };
 

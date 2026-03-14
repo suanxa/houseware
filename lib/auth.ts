@@ -1,19 +1,17 @@
 import NextAuth, { DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { SupabaseAdapter } from "@auth/supabase-adapter";
+// Hapus SupabaseAdapter import
 import { supabase } from "@/lib/supabase";
-import bcrypt from "bcryptjs"; // Pastikan sudah install bcryptjs
+import bcrypt from "bcryptjs";
 
-// --- UPDATE DEFINISI TIPE ---
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      role: string; // Tambahkan role
-      phone: string; // Tambahkan phone jika perlu
+      role: string;
+      phone: string;
     } & DefaultSession["user"];
   }
-
   interface User {
     role?: string;
     phone?: string;
@@ -26,14 +24,11 @@ declare module "next-auth/jwt" {
     role: string;
   }
 }
-// -----------------------------------
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
-  adapter: SupabaseAdapter({
-    url: process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    secret: process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  }),
+  // --- HAPUS ADAPTER DI SINI ---
+  // Kita tidak butuh adapter untuk CredentialsProvider
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -43,61 +38,70 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Email dan Password wajib diisi");
+          return null; // Lebih baik return null daripada throw error di sini
         }
 
-        // 1. Cari user di database berdasarkan email
         const { data: user, error } = await supabase
-    .from("users")
-    .select("*")
-    .eq("email", credentials.email)
-    .single();
+          .from("users")
+          .select("*")
+          .eq("email", credentials.email)
+          .single();
 
-  if (!user || error) throw new Error("Akun tidak ditemukan");
+        // Debugging di Terminal VS Code
+        console.log("Mencoba login:", credentials.email);
 
-  // CEK APAKAH SUDAH VERIFIKASI
-  if (user.is_verified === false) {
-    throw new Error("Akun belum diverifikasi. Silakan cek email Anda.");
-  }
+        if (!user || error) {
+          console.log("User tidak ditemukan");
+          return null;
+        }
 
-        // 2. Bandingkan password yang diinput dengan yang di DB (bcrypt)
+        if (user.is_verified === false) {
+          console.log("User belum verifikasi");
+          throw new Error("Akun belum diverifikasi.");
+        }
+
         const isPasswordValid = await bcrypt.compare(
           credentials.password as string,
           user.password
         );
 
         if (!isPasswordValid) {
-          throw new Error("Password salah");
+          console.log("Password salah");
+          return null;
         }
 
-        // 3. Kembalikan data user beserta Role-nya
+        console.log("Login Berhasil untuk role:", user.role);
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role, // Penting untuk redirect dashboard
+          role: user.role,
           phone: user.phone,
         };
       },
     }),
   ],
   session: {
-    strategy: "jwt",
+    strategy: "jwt", // Credentials WAJIB pakai JWT
   },
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
-        token.role = user.role as string; // Masukkan role ke JWT
+        token.id = user.id as string;
+        token.role = user.role as string;
       }
       return token;
     },
     async session({ session, token }) {
-      if (session?.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string; // Masukkan role ke Session
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.role = token.role;
       }
       return session;
     },
+  },
+  pages: {
+    signIn: "/auth/login", // Redirect kustom jika terjadi error
   },
 });

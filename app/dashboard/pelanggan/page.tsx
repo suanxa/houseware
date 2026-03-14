@@ -20,6 +20,7 @@ export default function PelangganDashboard() {
   }, [session]);
 
   const hitungDurasiHari = (mulai: string, selesai: string) => {
+    if (!mulai || !selesai) return 1;
     const d1 = new Date(mulai);
     const d2 = new Date(selesai);
     const diffTime = Math.abs(d2.getTime() - d1.getTime());
@@ -39,7 +40,7 @@ export default function PelangganDashboard() {
         `, { count: 'exact' })
         .eq("user_id", session?.user?.id);
 
-      // 2. Ambil Data Angkutan
+      // 2. Ambil Data Angkutan (Pastikan created_at ikut terpanggil)
       const { data: angkutan, count: countAngkutan } = await supabase
         .from("angkutan_barang")
         .select("*", { count: 'exact' })
@@ -47,6 +48,7 @@ export default function PelangganDashboard() {
 
       // 3. LOGIKA HITUNG TOTAL TAGIHAN GABUNGAN (Filter Status)
       let totalTagihan = 0;
+      // Tagihan aktif hanya dihitung jika sudah disetujui admin atau sedang berjalan
       const statusTagihanAktif = ['waiting_payment', 'waiting_confirmation', 'active'];
 
       // Hitung dari Penitipan
@@ -66,11 +68,19 @@ export default function PelangganDashboard() {
         }
       });
 
-      // 4. Gabungkan untuk Tabel Riwayat
+      // 4. GABUNGKAN DATA & SORTING (Berdasarkan created_at)
       const combinedOrders = [
-        ...(penitipan?.map(p => ({ ...p, tipe: 'Penitipan' })) || []),
-        ...(angkutan?.map(a => ({ ...a, tipe: 'Angkutan' })) || [])
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        ...(penitipan?.map(p => ({ 
+            ...p, 
+            tipe: 'Penitipan',
+            tanggal_referensi: p.created_at || new Date().toISOString() 
+        })) || []),
+        ...(angkutan?.map(a => ({ 
+            ...a, 
+            tipe: 'Angkutan',
+            tanggal_referensi: a.created_at || new Date().toISOString()
+        })) || [])
+      ].sort((a, b) => new Date(b.tanggal_referensi).getTime() - new Date(a.tanggal_referensi).getTime());
 
       setStats({
         penitipan: countPenitipan || 0,
@@ -93,13 +103,13 @@ export default function PelangganDashboard() {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Halo, {session?.user?.name || "Pelanggan"}! 👋</h1>
-            <p className="text-slate-500 font-medium text-sm">Monitor seluruh aktivitas House Ware Anda.</p>
+            <p className="text-slate-500 font-medium text-sm text-opacity-80">Monitor seluruh aktivitas House Ware Anda secara real-time.</p>
           </div>
           <div className="flex items-center space-x-4">
              <div className="text-right hidden sm:block">
                 <p className="text-sm font-semibold text-slate-900">{session?.user?.email}</p>
                 <p className="text-[10px] bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-bold uppercase inline-block">
-                  {session?.user?.role}
+                  {session?.user?.role || "Pelanggan"}
                 </p>
              </div>
              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold shadow-md">
@@ -110,15 +120,15 @@ export default function PelangganDashboard() {
 
         {/* --- Statistik Cepat --- */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 transition-transform hover:scale-[1.02]">
             <p className="text-xs text-slate-400 font-bold mb-1 uppercase tracking-wider">Total Penitipan</p>
-            <h3 className="text-2xl font-bold text-slate-900">{stats.penitipan} <span className="text-sm font-normal text-slate-400">Item</span></h3>
+            <h3 className="text-2xl font-bold text-slate-900">{stats.penitipan} <span className="text-sm font-normal text-slate-400 italic">Pesanan</span></h3>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 transition-transform hover:scale-[1.02]">
             <p className="text-xs text-slate-400 font-bold mb-1 uppercase tracking-wider">Total Angkutan</p>
-            <h3 className="text-2xl font-bold text-slate-900">{stats.angkutan} <span className="text-sm font-normal text-slate-400">Ritase</span></h3>
+            <h3 className="text-2xl font-bold text-slate-900">{stats.angkutan} <span className="text-sm font-normal text-slate-400 italic">Ritase</span></h3>
           </div>
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-red-500">
+          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 border-l-4 border-l-red-500 transition-transform hover:scale-[1.02]">
             <div className="flex justify-between items-center mb-1">
               <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Tagihan Perlu Dibayar</p>
               <AlertCircle size={14} className="text-red-400" />
@@ -126,7 +136,7 @@ export default function PelangganDashboard() {
             <h3 className="text-2xl font-bold text-red-600">
               Rp {stats.tagihan.toLocaleString('id-ID')}
             </h3>
-            <p className="text-[10px] text-slate-400 mt-1 italic">*Hanya menampilkan pesanan yang disetujui admin</p>
+            <p className="text-[10px] text-slate-400 mt-1 italic">*Telah diverifikasi Admin</p>
           </div>
         </div>
 
@@ -135,9 +145,9 @@ export default function PelangganDashboard() {
           <div className="bg-blue-600 p-8 rounded-2xl text-white shadow-lg shadow-blue-100 relative overflow-hidden group">
             <div className="relative z-10">
                 <h3 className="text-xl font-bold mb-2">Pesan Penitipan</h3>
-                <p className="text-blue-100 text-sm mb-4">Simpan barang berharga Anda di gudang kami.</p>
+                <p className="text-blue-100 text-sm mb-4">Gudang aman dengan sistem keamanan 24 jam.</p>
                 <Link href="/penitipan/buat" className="inline-block bg-white text-blue-600 px-6 py-2 rounded-lg font-bold hover:bg-blue-50 transition-all text-sm">
-                  Buat Pesanan Baru
+                  Pesan Sekarang
                 </Link>
             </div>
             <Package className="absolute right-[-10px] bottom-[-10px] w-32 h-32 text-white/10 group-hover:rotate-12 transition-transform duration-500" />
@@ -146,7 +156,7 @@ export default function PelangganDashboard() {
           <div className="bg-slate-900 p-8 rounded-2xl text-white shadow-lg shadow-slate-200 relative overflow-hidden group">
             <div className="relative z-10">
                 <h3 className="text-xl font-bold mb-2">Sewa Angkutan</h3>
-                <p className="text-slate-400 text-sm mb-4">Layanan jemput dan antar barang profesional.</p>
+                <p className="text-slate-400 text-sm mb-4">Armada lengkap siap menjemput barang Anda.</p>
                 <Link href="/angkutan/buat" className="inline-block bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition-all text-sm">
                   Pesan Armada
                 </Link>
@@ -158,7 +168,7 @@ export default function PelangganDashboard() {
         {/* --- Tabel Riwayat --- */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <h3 className="font-bold text-slate-900">Aktivitas Terakhir</h3>
+            <h3 className="font-bold text-slate-900">5 Aktivitas Terakhir</h3>
             <Link href="/riwayat" className="text-sm text-blue-600 font-medium hover:underline">Lihat Semua</Link>
           </div>
           <div className="overflow-x-auto">
@@ -187,13 +197,17 @@ export default function PelangganDashboard() {
                       <td className="p-4">
                         {order.tipe === 'Penitipan' ? (
                           <div className="flex flex-col">
-                            <span className="font-semibold">{order.jenis_barang?.nama_jenis || "Tanpa Kategori"}</span>
-                            <span className="text-xs text-slate-400">{order.jumlah} Unit</span>
+                            <span className="font-semibold text-slate-900">{order.jenis_barang?.nama_jenis || "Kategori Barang"}</span>
+                            <span className="text-xs text-slate-400 italic">{order.jumlah} Unit</span>
                           </div>
                         ) : (
                           <div className="flex flex-col">
-                            <span className="font-semibold line-clamp-1">{typeof order.jenis_barang === 'string' ? order.jenis_barang : 'Detail Angkutan'}</span>
-                            <span className="text-xs text-slate-400 line-clamp-1 truncate max-w-[200px]">{order.alamat_jemput} → {order.alamat_tujuan}</span>
+                            <span className="font-semibold line-clamp-1 text-slate-900">
+                              {typeof order.jenis_barang === 'string' ? order.jenis_barang : 'Barang Angkutan'}
+                            </span>
+                            <span className="text-[11px] text-slate-400 line-clamp-1 max-w-[250px]">
+                              {order.alamat_jemput} → {order.alamat_tujuan}
+                            </span>
                           </div>
                         )}
                       </td>
@@ -206,14 +220,23 @@ export default function PelangganDashboard() {
                           {order.status.replace('_', ' ')}
                         </span>
                       </td>
-                      <td className="p-4 text-right text-xs text-slate-400 font-medium">
-                        {new Date(order.created_at).toLocaleDateString('id-ID')}
+                      <td className="p-4 text-right text-xs text-slate-400 font-medium font-mono">
+                        {/* Validasi tanggal_referensi agar tidak Invalid Date */}
+                        {order.tanggal_referensi && !isNaN(new Date(order.tanggal_referensi).getTime())
+                          ? new Date(order.tanggal_referensi).toLocaleDateString('id-ID', {
+                              day: '2-digit',
+                              month: 'short',
+                              year: 'numeric'
+                            })
+                          : "---"}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="p-12 text-center text-slate-400">Belum ada aktivitas.</td>
+                    <td colSpan={4} className="p-12 text-center text-slate-300 font-medium italic">
+                      Belum ada aktivitas layanan yang tercatat.
+                    </td>
                   </tr>
                 )}
               </tbody>

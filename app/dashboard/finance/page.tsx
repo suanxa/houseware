@@ -1,6 +1,8 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import Sidebar from "@/components/sidebar";
 import { 
@@ -9,15 +11,67 @@ import {
   Clock, 
   FileText, 
   TrendingUp,
-  ArrowUpRight
+  ArrowUpRight,
+  Loader2
 } from "lucide-react";
 
 export default function FinanceDashboard() {
   const { data: session } = useSession();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({ totalRevenue: 0, pending: 0, success: 0 });
+  const [recentPayments, setRecentPayments] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchFinanceData();
+  }, []);
+
+  async function fetchFinanceData() {
+    setLoading(true);
+    try {
+      // Ganti created_at menjadi tanggal_bayar sesuai struktur tabelmu
+      const { data: payments, error: payError } = await supabase
+        .from("pembayaran")
+        .select(`
+          *,
+          users ( name )
+        `) 
+        .order("tanggal_bayar", { ascending: false }); // <-- Perubahan di sini
+
+      if (payError) {
+        console.error("Supabase Error Details:", payError);
+        throw payError;
+      }
+
+      let revenue = 0;
+      let pendingCount = 0;
+      let successCount = 0;
+
+      payments?.forEach((p) => {
+        const status = p.status?.toLowerCase();
+        if (status === "lunas" || status === "berhasil") {
+          revenue += Number(p.total_bayar) || 0;
+          successCount++;
+        } else if (status === "menunggu_verifikasi") {
+          pendingCount++;
+        }
+      });
+
+      setStats({
+        totalRevenue: revenue,
+        pending: pendingCount,
+        success: successCount
+      });
+      setRecentPayments(payments?.slice(0, 5) || []);
+
+    } catch (error: any) {
+      console.error("Detailed Finance Error:", error.message || error);
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar otomatis menampilkan menu Finance */}
       <Sidebar />
 
       <main className="flex-1 p-8 overflow-y-auto">
@@ -25,12 +79,12 @@ export default function FinanceDashboard() {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Dashboard Keuangan 💰</h1>
-            <p className="text-slate-500">Pantau transaksi dan verifikasi pembayaran House Ware.</p>
+            <p className="text-slate-500 font-medium text-sm">Monitor arus kas dan verifikasi pembayaran masuk.</p>
           </div>
           <div className="flex items-center space-x-4">
              <div className="text-right hidden sm:block">
                 <p className="text-sm font-semibold text-slate-900">{session?.user?.name}</p>
-                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold uppercase">
+                <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
                   {session?.user?.role}
                 </span>
              </div>
@@ -40,70 +94,59 @@ export default function FinanceDashboard() {
           </div>
         </header>
 
-        {/* 1. Ringkasan Keuangan (Stats Card) */}
+        {/* 1. Ringkasan Keuangan (Live Stats) */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-center mb-4">
-              <div className="p-2 bg-emerald-50 text-emerald-600 rounded-lg"><TrendingUp size={20} /></div>
-              <span className="text-[10px] font-bold text-emerald-600">+12% Bln ini</span>
-            </div>
-            <p className="text-sm text-slate-500">Total Pendapatan</p>
-            <h3 className="text-2xl font-bold text-slate-900">Rp 0</h3>
-          </div>
-          
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-center mb-4">
-              <div className="p-2 bg-amber-50 text-amber-600 rounded-lg"><Clock size={20} /></div>
-            </div>
-            <p className="text-sm text-slate-500">Menunggu Verifikasi</p>
-            <h3 className="text-2xl font-bold text-slate-900">0</h3>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-center mb-4">
-              <div className="p-2 bg-blue-50 text-blue-600 rounded-lg"><CheckCircle2 size={20} /></div>
-            </div>
-            <p className="text-sm text-slate-500">Pembayaran Berhasil</p>
-            <h3 className="text-2xl font-bold text-slate-900">0</h3>
-          </div>
-
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-            <div className="flex justify-between items-center mb-4">
-              <div className="p-2 bg-purple-50 text-purple-600 rounded-lg"><Wallet size={20} /></div>
-            </div>
-            <p className="text-sm text-slate-500">Saldo Mitra</p>
-            <h3 className="text-2xl font-bold text-slate-900">Rp 0</h3>
-          </div>
+          <FinanceCard 
+            icon={<TrendingUp size={20} />} 
+            label="Total Pendapatan" 
+            value={`Rp ${stats.totalRevenue.toLocaleString('id-ID')}`} 
+            color="emerald" 
+            trend="+12% Bln ini"
+          />
+          <FinanceCard 
+            icon={<Clock size={20} />} 
+            label="Menunggu Verifikasi" 
+            value={stats.pending.toString()} 
+            color="amber" 
+          />
+          <FinanceCard 
+            icon={<CheckCircle2 size={20} />} 
+            label="Pembayaran Berhasil" 
+            value={stats.success.toString()} 
+            color="blue" 
+          />
+          <FinanceCard 
+            icon={<Wallet size={20} />} 
+            label="Estimasi Saldo" 
+            value={`Rp ${stats.totalRevenue.toLocaleString('id-ID')}`} 
+            color="purple" 
+          />
         </div>
 
         {/* 2. Actions & Reports */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-emerald-700 p-8 rounded-3xl text-white flex justify-between items-center shadow-lg shadow-emerald-200">
-            <div>
+          <div className="bg-emerald-700 p-8 rounded-3xl text-white flex justify-between items-center shadow-lg shadow-emerald-200 group">
+            <div className="z-10">
               <h3 className="text-xl font-bold mb-2">Verifikasi Pembayaran</h3>
-              <p className="text-emerald-100 text-sm mb-4">Cek bukti transfer masuk dari pelanggan secara manual.</p>
-              <Link href="/finance/verifikasi" className="inline-flex items-center space-x-2 bg-white text-emerald-700 px-6 py-2 rounded-xl font-bold hover:bg-emerald-50 transition-all">
+              <p className="text-emerald-100 text-sm mb-6 max-w-xs">Terdapat {stats.pending} pembayaran baru yang perlu Anda tinjau sekarang.</p>
+              <Link href="/finance/verifikasi" className="inline-flex items-center space-x-2 bg-white text-emerald-700 px-6 py-2.5 rounded-xl font-bold hover:scale-105 transition-all">
                 <span>Buka Antrean</span>
                 <ArrowUpRight size={18} />
               </Link>
             </div>
-            <div className="hidden lg:block opacity-20">
-              <CheckCircle2 size={100} />
-            </div>
+            <CheckCircle2 size={120} className="absolute right-4 bottom-[-20px] text-white opacity-10 group-hover:rotate-12 transition-transform" />
           </div>
 
-          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center">
-            <div>
+          <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
+            <div className="z-10">
               <h3 className="text-xl font-bold text-slate-900 mb-2">Laporan Bulanan</h3>
-              <p className="text-slate-500 text-sm mb-4">Unduh laporan transaksi lengkap dalam format PDF/Excel.</p>
-              <Link href="/finance/laporan" className="inline-flex items-center space-x-2 bg-slate-900 text-white px-6 py-2 rounded-xl font-bold hover:bg-slate-800 transition-all">
+              <p className="text-slate-500 text-sm mb-6">Rekapitulasi seluruh transaksi dalam format PDF/Excel.</p>
+              <button className="inline-flex items-center space-x-2 bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-all">
                 <span>Unduh Laporan</span>
                 <FileText size={18} />
-              </Link>
+              </button>
             </div>
-            <div className="hidden lg:block text-slate-100">
-              <FileText size={100} />
-            </div>
+            <FileText size={120} className="absolute right-4 bottom-[-20px] text-slate-100 group-hover:-rotate-12 transition-transform" />
           </div>
         </div>
 
@@ -111,33 +154,75 @@ export default function FinanceDashboard() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex justify-between items-center">
             <h3 className="font-bold text-slate-900">Transaksi Terakhir</h3>
-            <button className="text-sm text-emerald-600 font-semibold hover:underline">Refresh Data</button>
+            <button onClick={fetchFinanceData} className="text-xs text-emerald-600 font-bold hover:bg-emerald-50 px-3 py-1.5 rounded-lg transition-colors">
+              Refresh Data
+            </button>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
-              <thead className="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider">
+              <thead className="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-widest">
                 <tr>
-                  <th className="p-4 font-semibold">ID Transaksi</th>
-                  <th className="p-4 font-semibold">Pelanggan</th>
-                  <th className="p-4 font-semibold">Jumlah</th>
-                  <th className="p-4 font-semibold">Metode</th>
-                  <th className="p-4 font-semibold">Status</th>
+                  <th className="p-4 font-bold">ID Transaksi</th>
+                  <th className="p-4 font-bold">Pelanggan</th>
+                  <th className="p-4 font-bold">Layanan</th>
+                  <th className="p-4 font-bold">Total Bayar</th>
+                  <th className="p-4 font-bold text-center">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 text-sm">
-                <tr>
-                  <td colSpan={5} className="p-12 text-center text-slate-400">
-                    <div className="flex flex-col items-center">
-                      <Wallet size={40} className="mb-2 opacity-20" />
-                      <p>Tidak ada transaksi yang perlu diproses hari ini.</p>
-                    </div>
-                  </td>
-                </tr>
+                {loading ? (
+                  <tr><td colSpan={5} className="p-10 text-center"><Loader2 className="animate-spin mx-auto text-emerald-600" /></td></tr>
+                ) : recentPayments.length > 0 ? (
+                  recentPayments.map((p) => (
+                    <tr key={p.id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="p-4 font-mono text-xs text-slate-400">#{p.id.slice(0, 8)}</td>
+                      <td className="p-4 font-bold text-slate-900">{p.users?.name || "User"}</td>
+                      <td className="p-4 capitalize">{p.jenis_layanan}</td>
+                      <td className="p-4 font-bold">Rp {Number(p.total_bayar).toLocaleString('id-ID')}</td>
+                      <td className="p-4 text-center">
+                        <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
+                          p.status === 'lunas' || p.status === 'berhasil' ? 'bg-emerald-100 text-emerald-700' : 
+                          p.status === 'menunggu_verifikasi' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500'
+                        }`}>
+                          {p.status.replace('_', ' ')}
+                        </span>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="p-12 text-center text-slate-400">
+                      <div className="flex flex-col items-center">
+                        <Wallet size={40} className="mb-2 opacity-20" />
+                        <p>Belum ada transaksi masuk.</p>
+                      </div>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </main>
+    </div>
+  );
+}
+
+function FinanceCard({ icon, label, value, color, trend }: any) {
+  const colors: any = {
+    emerald: "bg-emerald-50 text-emerald-600",
+    amber: "bg-amber-50 text-amber-600",
+    blue: "bg-blue-50 text-blue-600",
+    purple: "bg-purple-50 text-purple-600",
+  };
+  return (
+    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+      <div className="flex justify-between items-center mb-4">
+        <div className={`p-2 rounded-lg ${colors[color]}`}>{icon}</div>
+        {trend && <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded">{trend}</span>}
+      </div>
+      <p className="text-sm text-slate-500 font-medium">{label}</p>
+      <h3 className="text-2xl font-bold text-slate-900">{value}</h3>
     </div>
   );
 }

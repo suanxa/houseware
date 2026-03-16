@@ -32,7 +32,7 @@ export default function Sidebar() {
       { name: "Dashboard", href: "/dashboard/mitra", icon: LayoutDashboard },
       { name: "Lokasi Saya", href: "/mitra/lokasi", icon: MapPin },
       { name: "Kelola Armada", href: "/mitra/armada", icon: Truck },
-      { name: "Pesanan Masuk", href: "/mitra/pesanan", icon: Package },
+      { name: "Konfirmasi Pesanan", href: "/mitra/update-status", icon: Package },
     ],
     finance: [
       { name: "Dashboard", href: "/dashboard/finance", icon: LayoutDashboard },
@@ -47,7 +47,7 @@ export default function Sidebar() {
     superadmin: [
       { name: "Dashboard", href: "/dashboard/superadmin", icon: LayoutDashboard },
       { name: "Data Master", href: "/superadmin/master", icon: Settings },
-      { name: "Semua Transaksi", href: "/superadmin/all", icon: History },
+      { name: "Semua Transaksi", href: "/superadmin/transaksi", icon: History },
     ]
   };
 

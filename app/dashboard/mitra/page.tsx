@@ -5,24 +5,26 @@ import { useSession } from "next-auth/react";
 import { supabase } from "@/lib/supabase";
 import Sidebar from "@/components/sidebar";
 import { 
-  PackageSearch, Warehouse, Truck, AlertCircle, Loader2 
+  PackageSearch, Warehouse, Truck, AlertCircle, Loader2, Wallet, TrendingUp 
 } from "lucide-react";
 import Link from "next/link";
 
 export default function MitraDashboard() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({ baru: 0, lokasi: 0, armada: 0, alert: 0 });
+  const [stats, setStats] = useState({ baru: 0, lokasi: 0, armada: 0, alert: 0, pendapatan: 0 });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
   useEffect(() => {
     if (session?.user?.id) fetchMitraData();
   }, [session]);
 
+  const formatIDR = (val: number) => 
+    new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(val);
+
   async function fetchMitraData() {
     setLoading(true);
     try {
-      // 1. Dapatkan ID Mitra dari user yang login
       const { data: mitra } = await supabase
         .from("mitra")
         .select("id")
@@ -30,25 +32,57 @@ export default function MitraDashboard() {
         .single();
 
       if (mitra) {
-        // 2. Ambil Stats (Lokasi & Armada milik Mitra ini)
         const { count: cLokasi } = await supabase.from("lokasi_penitipan").select("*", { count: 'exact', head: true }).eq("mitra_id", mitra.id);
         const { count: cArmada } = await supabase.from("armada").select("*", { count: 'exact', head: true }).eq("mitra_id", mitra.id);
         
-        // 3. Ambil Pesanan Masuk (Status 'active' yang berarti sudah dibayar)
-        // Note: Idealnya ada kolom mitra_id di tabel transaksi, atau join lewat lokasi/armada
-        const { data: penitipan } = await supabase.from("penitipan_barang").select("*, users(name), lokasi_penitipan!inner(*)").eq("lokasi_penitipan.mitra_id", mitra.id).eq("status", "active");
-        const { data: angkutan } = await supabase.from("angkutan_barang").select("*, users(name)").eq("status", "active"); // Sederhanakan untuk contoh
+        // Ambil data penitipan & angkutan (semua status untuk tabel, tapi nanti difilter untuk saldo)
+        const { data: penitipan } = await supabase
+          .from("penitipan_barang")
+          .select("*, users(name), jenis_barang:jenis_barang_id(harga_per_hari), lokasi_penitipan!inner(harga_per_hari)")
+          .eq("lokasi_penitipan.mitra_id", mitra.id);
+
+        const { data: angkutan } = await supabase
+          .from("angkutan_barang")
+          .select("*, users(name)")
+          .eq("mitra", mitra.id);
+
+        const getDurasi = (m: string, s: string) => {
+          const d1 = new Date(m);
+          const d2 = new Date(s);
+          return Math.ceil(Math.abs(d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) || 1;
+        };
+
+        // --- Logika Pendapatan HANYA yang Completed ---
+        const hitungHak = (item: any, tipe: 'pen' | 'ang') => {
+          if (tipe === 'pen') {
+            const durasi = getDurasi(item.tanggal_mulai, item.tanggal_selesai);
+            const totalTagihan = ((item.jenis_barang?.harga_per_hari || 0) * (item.jumlah || 1) * durasi) + (Number(item.ongkir_final) || 0);
+            const hargaGudang = (item.lokasi_penitipan?.harga_per_hari || 0) * durasi;
+            return totalTagihan > hargaGudang ? hargaGudang : 0;
+          } else {
+            return (Number(item.total_biaya) || 0) * 0.8;
+          }
+        };
+
+        // Filter hanya yang sudah selesai untuk Saldo
+        const lunasPen = (penitipan || []).filter(p => ['completed', 'selesai'].includes(p.status?.toLowerCase()));
+        const lunasAng = (angkutan || []).filter(a => ['completed', 'selesai'].includes(a.status?.toLowerCase()));
+
+        const totalPendapatan = 
+          lunasPen.reduce((sum, p) => sum + hitungHak(p, 'pen'), 0) +
+          lunasAng.reduce((sum, a) => sum + hitungHak(a, 'ang'), 0);
 
         const combined = [
-          ...(penitipan?.map(p => ({ ...p, tipe: 'Penitipan' })) || []),
-          ...(angkutan?.map(a => ({ ...a, tipe: 'Angkutan' })) || [])
+          ...(penitipan?.map(p => ({ ...p, tipe: 'Penitipan', hak: hitungHak(p, 'pen') })) || []),
+          ...(angkutan?.map(a => ({ ...a, tipe: 'Angkutan', hak: hitungHak(a, 'ang') })) || [])
         ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
         setStats({
-          baru: combined.length,
+          baru: combined.filter(o => o.status === 'active').length,
           lokasi: cLokasi || 0,
           armada: cArmada || 0,
-          alert: combined.filter(o => o.status === 'active').length
+          alert: combined.filter(o => o.status === 'active').length,
+          pendapatan: totalPendapatan
         });
         setRecentOrders(combined.slice(0, 5));
       }
@@ -79,15 +113,43 @@ export default function MitraDashboard() {
           </div>
         </header>
 
-        {/* Statistik Cepat */}
+        {/* --- HERO CARD PENDAPATAN (HANYA COMPLETED) --- */}
+        <div className="w-full mb-8">
+           <div className="bg-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
+                 <div>
+                    <div className="flex items-center gap-2 mb-2">
+                       <Wallet className="text-amber-400" size={20} />
+                       <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Total Saldo Masuk (Selesai)</span>
+                    </div>
+                    <h2 className="text-4xl font-black">{formatIDR(stats.pendapatan)}</h2>
+                    <p className="text-slate-400 text-[10px] mt-2 font-medium italic">*Hanya menjumlahkan layanan yang sudah berstatus 'Selesai'</p>
+                 </div>
+                 <div className="bg-emerald-500/10 border border-emerald-500/20 p-4 rounded-2xl backdrop-blur-md">
+                    <div className="flex items-center gap-3">
+                       <div className="p-2 bg-emerald-500 rounded-lg text-white">
+                          <TrendingUp size={20} />
+                       </div>
+                       <div>
+                          <p className="text-[10px] font-bold text-emerald-400 uppercase">Status Dompet</p>
+                          <p className="text-xs font-bold text-white">Siap Dicairkan</p>
+                       </div>
+                    </div>
+                 </div>
+              </div>
+              <Wallet size={180} className="absolute -right-10 -bottom-10 opacity-5 group-hover:scale-110 transition-transform duration-700" />
+           </div>
+        </div>
+
+        {/* Statistik Cepat (4 Card Asli) */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <StatCard icon={<PackageSearch size={20} />} label="Pesanan Siap" value={stats.baru} color="blue" badge="READY" />
+          <StatCard icon={<PackageSearch size={20} />} label="Tugas Aktif" value={stats.baru} color="blue" badge="ACTIVE" />
           <StatCard icon={<Warehouse size={20} />} label="Lokasi Aktif" value={stats.lokasi} color="green" />
           <StatCard icon={<Truck size={20} />} label="Total Armada" value={stats.armada} color="purple" />
           <StatCard icon={<AlertCircle size={20} />} label="Perlu Update" value={stats.alert} color="red" />
         </div>
 
-        {/* Management Links */}
+        {/* ... Management Links ... */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-6 hover:border-amber-500 transition-colors">
             <div className="flex-1">
@@ -108,10 +170,10 @@ export default function MitraDashboard() {
           </div>
         </div>
 
-        {/* Recent Orders Table */}
+        {/* Tabel Layanan - Menampilkan rincian hak per baris */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-            <h3 className="font-bold text-slate-900">Tugas Layanan Aktif</h3>
+            <h3 className="font-bold text-slate-900">Tugas Layanan & Estimasi Hak</h3>
             <Link href="/mitra/update-status" className="text-xs bg-amber-500 text-white px-4 py-1.5 rounded-lg font-bold hover:bg-amber-600 transition-colors">Update Status</Link>
           </div>
           <div className="overflow-x-auto">
@@ -120,13 +182,14 @@ export default function MitraDashboard() {
                 <tr>
                   <th className="p-4">Pelanggan</th>
                   <th className="p-4">Layanan</th>
+                  <th className="p-4">Estimasi Hak</th>
                   <th className="p-4 text-center">Status</th>
                   <th className="p-4">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-slate-700 text-sm">
                 {loading ? (
-                  <tr><td colSpan={4} className="p-10 text-center"><Loader2 className="animate-spin mx-auto text-amber-500" /></td></tr>
+                  <tr><td colSpan={5} className="p-10 text-center"><Loader2 className="animate-spin mx-auto text-amber-500" /></td></tr>
                 ) : recentOrders.length > 0 ? (
                   recentOrders.map((order) => (
                     <tr key={order.id} className="hover:bg-slate-50/50 transition-colors">
@@ -135,8 +198,21 @@ export default function MitraDashboard() {
                          <p className="font-semibold text-xs">{order.tipe}</p>
                          <p className="text-[10px] text-slate-400 italic">ID: {order.id.slice(0,8)}</p>
                       </td>
+                      <td className="p-4 font-black text-slate-900">
+                        {formatIDR(order.hak)}
+                        {/* Keterangan jika belum masuk saldo */}
+                        {!['completed', 'selesai'].includes(order.status?.toLowerCase()) && (
+                          <p className="text-[8px] text-amber-500 font-bold uppercase">Pending Saldo</p>
+                        )}
+                      </td>
                       <td className="p-4 text-center">
-                        <span className="px-2 py-1 rounded-md text-[10px] font-bold bg-green-100 text-green-700 uppercase">{order.status}</span>
+                        <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase ${
+                          ['completed', 'selesai'].includes(order.status?.toLowerCase()) 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {order.status}
+                        </span>
                       </td>
                       <td className="p-4">
                         <Link href="/mitra/update-status" className="text-amber-600 hover:underline font-bold text-xs">Update</Link>
@@ -145,7 +221,7 @@ export default function MitraDashboard() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="p-12 text-center text-slate-400 italic">Belum ada pesanan aktif.</td>
+                    <td colSpan={5} className="p-12 text-center text-slate-400 italic">Belum ada pesanan aktif.</td>
                   </tr>
                 )}
               </tbody>

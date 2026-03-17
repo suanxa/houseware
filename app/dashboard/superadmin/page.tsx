@@ -93,7 +93,11 @@ export default function SuperAdminDashboard() {
           <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
             <div className="p-2 bg-red-50 text-red-600 rounded-lg w-fit mb-4"><BarChart3 size={20} /></div>
             <p className="text-sm text-slate-500 font-medium">Laporan Sistem</p>
-            <button className="text-xs font-bold text-red-600 hover:underline mt-2">Export Data (PDF/Excel)</button>
+            <Link href="/superadmin/transaksi">
+            <button className="text-xs font-bold text-red-600 hover:underline mt-2 flex items-center gap-1">
+              Export Data (PDF)
+            </button>
+          </Link>
           </div>
         </div>
 

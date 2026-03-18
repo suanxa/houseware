@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Providers } from "./providers"; // Kita buat file ini di bawah
+import { Providers } from "./providers"; 
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Houseware - Auth", // Menggunakan nama project kamu
+  title: "Houseware - Layanan Jasa", 
   description: "Next Auth with Supabase",
 };
 

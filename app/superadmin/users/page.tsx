@@ -29,7 +29,6 @@ export default function KelolaStaff() {
     setLoading(true);
     try {
       // Mengambil user dengan role admin atau finance
-      // Dihapus .order("created_at") karena kolom tidak ada di DB kamu
       const { data, error } = await supabase
         .from("users")
         .select("id, name, email, role, is_verified")
@@ -64,7 +63,7 @@ export default function KelolaStaff() {
       alert("Akun Staff Berhasil Dibuat!");
       setShowModal(false);
       setForm({ name: "", email: "", password: "", role: "admin" });
-      fetchStaff(); // Refresh tabel
+      fetchStaff(); 
     } else {
       alert("Gagal: " + error.message);
     }

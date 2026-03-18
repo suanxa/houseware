@@ -19,7 +19,6 @@ import {
 export default function FinanceDashboard() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
-  // Menambahkan hutangMitra ke dalam state stats
   const [stats, setStats] = useState({ totalRevenue: 0, pending: 0, success: 0, hutangMitra: 0 });
   const [recentPayments, setRecentPayments] = useState<any[]>([]);
 
@@ -167,12 +166,15 @@ export default function FinanceDashboard() {
 
           <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm flex justify-between items-center relative overflow-hidden group">
             <div className="z-10">
-              <h3 className="text-xl font-bold text-slate-900 mb-2">Laporan Bulanan</h3>
-              <p className="text-slate-500 text-sm mb-6">Rekapitulasi seluruh transaksi dalam format PDF/Excel.</p>
-              <button className="inline-flex items-center space-x-2 bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-all">
+              <h3 className="text-xl font-bold text-slate-900 mb-2">Laporan</h3>
+              <p className="text-slate-500 text-sm mb-6">Rekapitulasi seluruh transaksi dalam format PDF.</p>
+              <Link 
+                href="/finance/laporan" 
+                className="inline-flex items-center space-x-2 bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-all active:scale-95"
+              >
                 <span>Unduh Laporan</span>
                 <FileText size={18} />
-              </button>
+              </Link>
             </div>
             <FileText size={120} className="absolute right-4 bottom-[-20px] text-slate-100 group-hover:-rotate-12 transition-transform" />
           </div>

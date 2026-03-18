@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import Sidebar from "@/components/sidebar";
+import Link from "next/link";
 import { 
   Store, Trash2, MapPin, 
   Truck, Loader2, Search, 
@@ -21,7 +22,7 @@ export default function KelolaMitraSuper() {
   async function fetchMitraData() {
     setLoading(true);
     try {
-      // Kita tambahkan lokasi_penitipan dan armada ke dalam select
+      // Tambahkan lokasi_penitipan dan armada ke dalam select
       const { data, error } = await supabase
         .from("mitra")
         .select(`
@@ -92,7 +93,6 @@ export default function KelolaMitraSuper() {
 
       {/* Info Utama Mitra */}
       <div>
-        {/* Perbaikan: Menggunakan nama_mitra */}
         <h3 className="font-bold text-slate-900 text-lg uppercase tracking-tight">
           {mitra.nama_mitra || "Mitra Tanpa Nama"}
         </h3>
@@ -139,9 +139,12 @@ export default function KelolaMitraSuper() {
       </div>
       
       {/* Tombol Detail */}
-      <button className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg shadow-slate-200 active:scale-95">
+      <Link 
+        href={`/superadmin/lokasi?mitraId=${mitra.id}`} 
+        className="p-3 bg-slate-900 text-white rounded-2xl hover:bg-blue-600 transition-all shadow-lg shadow-slate-200 active:scale-95 flex items-center justify-center"
+      >
         <ChevronRight size={20} />
-      </button>
+      </Link>
     </div>
   </div>
 ))

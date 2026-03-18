@@ -17,7 +17,7 @@ export default function BuatAngkutan() {
     alamat_tujuan: "",
     jenis_barang: "",
     jadwal: "",
-    zona_jarak: "0", // Default 0
+    zona_jarak: "0", 
   });
 
   // --- LOGIKA HITUNG HARGA BERDASARKAN JARAK ---
@@ -25,11 +25,11 @@ export default function BuatAngkutan() {
     const jarak = parseInt(formData.zona_jarak);
     let harga = 0;
 
-    if (jarak === 5) harga = 50000;      // 0-5 km
-    else if (jarak === 10) harga = 85000; // 5-10 km
-    else if (jarak === 15) harga = 120000; // 10-15 km
-    else if (jarak === 20) harga = 150000; // 15-20 km
-    else if (jarak === 21) harga = 250000; // > 20 km (Luar Kota)
+    if (jarak === 5) harga = 50000;
+    else if (jarak === 10) harga = 85000; 
+    else if (jarak === 15) harga = 120000; 
+    else if (jarak === 20) harga = 150000; 
+    else if (jarak === 21) harga = 250000; 
 
     return harga;
   }, [formData.zona_jarak]);
@@ -163,7 +163,8 @@ export default function BuatAngkutan() {
             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
               <Info className="text-blue-600 mt-0.5" size={18} />
               <p className="text-xs text-blue-700 leading-relaxed">
-                Harga sudah termasuk jasa driver dan bahan bakar. Jika membutuhkan <strong>Tenaga Angkut Tambahan (Kuli)</strong>, silakan konfirmasi kepada admin setelah pesanan dibuat.
+                Harga sudah termasuk jasa driver dan bahan bakar. Jika membutuhkan <strong>Tenaga Angkut Tambahan (Kuli)</strong>, silakan konfirmasi kepada admin setelah pesanan dibuat. 
+                <strong>Biaya juga akan ditambahkan jika barang melebihi kapasitas</strong>
               </p>
             </div>
 

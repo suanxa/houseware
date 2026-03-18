@@ -23,7 +23,7 @@ export default function SuperAdminDashboard() {
   async function fetchSuperAdminData() {
     setLoading(true);
     try {
-      // 1. Hitung Jumlah Pengguna (Selain Superadmin)
+      // 1. Hitung Jumlah Pengguna 
       const { count: userCount } = await supabase
         .from("users")
         .select("*", { count: 'exact', head: true })
@@ -189,7 +189,6 @@ export default function SuperAdminDashboard() {
   );
 }
 
-// Sub Component StatCard
 function StatCard({ icon, label, value, color }: any) {
   const colors: any = {
     blue: "bg-blue-50 text-blue-600",

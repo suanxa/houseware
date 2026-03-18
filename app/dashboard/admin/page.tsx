@@ -156,7 +156,6 @@ export default function AdminDashboard() {
   );
 }
 
-// --- Sub Component untuk Stats Card agar kode bersih ---
 function StatCard({ icon, label, value, color, badge }: any) {
   const colors: any = {
     indigo: "bg-indigo-50 text-indigo-600",

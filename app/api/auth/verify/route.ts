@@ -1,4 +1,3 @@
-// app/api/auth/verify/route.ts
 import { NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 

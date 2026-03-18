@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
-    const [step, setStep] = useState(1); // Step 1: Form, Step 2: OTP
+    const [step, setStep] = useState(1); 
     const [formData, setFormData] = useState({
         name: "",
         email: "",
@@ -67,7 +67,6 @@ export default function RegisterPage() {
 
             if (res.ok) { 
                 setStatus("success");
-                // Beri jeda 2 detik agar user bisa lihat pesan sukses sebelum pindah
                 setTimeout(() => router.push("/auth/login?verified=true"), 2000);
             } else {
                 const data = await res.json();

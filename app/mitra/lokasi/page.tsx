@@ -62,7 +62,7 @@ export default function KelolaLokasiMitra() {
       return;
     }
 
-    // 2. Proses Insert (Sekarang mitra.id tidak akan merah lagi)
+    // 2. Proses Insert 
     const { error } = await supabase.from("lokasi_penitipan").insert([{
       mitra_id: mitra.id, 
       nama_lokasi: form.nama_lokasi,
@@ -116,30 +116,29 @@ export default function KelolaLokasiMitra() {
                   
                   <div className="grid grid-cols-2 gap-4">
                     {/* Ganti bagian tampilan kapasitas dengan progress bar ini */}
-<div className="bg-slate-50 p-4 rounded-2xl w-full">
-  <div className="flex justify-between items-center mb-2">
-    <p className="text-[10px] uppercase font-bold text-slate-400">Okupansi Gudang</p>
-    <p className="text-[10px] font-bold text-slate-900">
-      {loc.kapasitas_maksimal - loc.kapasitas_tersisa} / {loc.kapasitas_maksimal} Slot Terpakai
-    </p>
-  </div>
-  
-  {/* Progress Bar Sederhana */}
-  <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-    <div 
-      className={`h-full transition-all duration-500 ${
-        (loc.kapasitas_tersisa / loc.kapasitas_maksimal) < 0.2 ? 'bg-red-500' : 'bg-blue-500'
-      }`}
-      style={{ 
-        width: `${((loc.kapasitas_maksimal - loc.kapasitas_tersisa) / loc.kapasitas_maksimal) * 100}%` 
-      }}
-    />
-  </div>
-  
-  <p className="text-[10px] text-slate-500 mt-2 italic">
-    *Tersisa {loc.kapasitas_tersisa} slot kosong
-  </p>
-</div>
+                    <div className="bg-slate-50 p-4 rounded-2xl w-full">
+                      <div className="flex justify-between items-center mb-2">
+                        <p className="text-[10px] uppercase font-bold text-slate-400">Okupansi Gudang</p>
+                        <p className="text-[10px] font-bold text-slate-900">
+                          {loc.kapasitas_maksimal - loc.kapasitas_tersisa} / {loc.kapasitas_maksimal} Slot Terpakai
+                        </p>
+                      </div>
+                      
+                      {/* Progress Bar Sederhana */}
+                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full transition-all duration-500 ${
+                            (loc.kapasitas_tersisa / loc.kapasitas_maksimal) < 0.2 ? 'bg-red-500' : 'bg-blue-500'
+                          }`}
+                          style={{ 
+                            width: `${((loc.kapasitas_maksimal - loc.kapasitas_tersisa) / loc.kapasitas_maksimal) * 100}%` 
+                          }}
+                        />
+                        </div> 
+                        <p className="text-[10px] text-slate-500 mt-2 italic">
+                          *Tersisa {loc.kapasitas_tersisa} slot kosong
+                        </p>
+                      </div>
                     <div className="bg-slate-50 p-3 rounded-2xl">
                     <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Harga / Hari</p>
                     <p className="text-sm font-bold text-emerald-600">

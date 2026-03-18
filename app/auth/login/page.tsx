@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState(""); // Tambahkan ini
+  const [password, setPassword] = useState(""); 
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const router = useRouter();
@@ -18,8 +18,6 @@ export default function LoginPage() {
     setErrorMessage("");
 
     try {
-      // Di v5, kita bisa langsung redirect dari sisi server
-      // Ganti 'redirect: false' menjadi 'true' untuk testing
       const result = await signIn("credentials", {
         email,
         password,
@@ -31,9 +29,6 @@ export default function LoginPage() {
         setErrorMessage("Email atau Password salah.");
         return;
       }
-
-      // Jika berhasil, gunakan window.location untuk "force refresh" session
-      // Ini jauh lebih aman daripada fetch session manual
       if (result?.ok) {
         setStatus("success");
         window.location.href = "/dashboard/pelanggan"; 

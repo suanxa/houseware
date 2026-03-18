@@ -1,6 +1,5 @@
 import NextAuth, { DefaultSession } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-// Hapus SupabaseAdapter import
 import { supabase } from "@/lib/supabase";
 import bcrypt from "bcryptjs";
 
@@ -27,8 +26,6 @@ declare module "next-auth/jwt" {
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET,
-  // --- HAPUS ADAPTER DI SINI ---
-  // Kita tidak butuh adapter untuk CredentialsProvider
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -83,7 +80,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
   session: {
-    strategy: "jwt", // Credentials WAJIB pakai JWT
+    strategy: "jwt", 
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -102,6 +99,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   pages: {
-    signIn: "/auth/login", // Redirect kustom jika terjadi error
+    signIn: "/auth/login", 
   },
 });

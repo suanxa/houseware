@@ -45,7 +45,6 @@ export default function BuatPenitipan() {
   useEffect(() => {
     const fetchDataMaster = async () => {
       const { data: lokasi } = await supabase.from("lokasi_penitipan").select("id, nama_lokasi");
-      // Ambil harga_per_hari dan ongkir_dasar
       const { data: jenis } = await supabase.from("jenis_barang").select("id, nama_jenis, harga_per_hari, ongkir_dasar");
       
       if (lokasi) setListLokasi(lokasi);
@@ -54,7 +53,7 @@ export default function BuatPenitipan() {
     fetchDataMaster();
   }, []);
 
-  // --- LOGIKA HITUNG HARGA (Highest Base Fare) ---
+  // --- LOGIKA HITUNG HARGA ---
   const kalkulasiBiaya = useMemo(() => {
     if (!globalData.tanggal_mulai || !globalData.tanggal_selesai) {
       return { sewa: 0, ongkir: 0, total: 0, durasi: 0 };
@@ -71,9 +70,9 @@ export default function BuatPenitipan() {
     items.forEach((item) => {
       const kategori = listJenis.find((j) => j.id === item.jenis_barang_id);
       if (kategori) {
-        totalSewaSemuaBarang += (Number(kategori.harga_per_hari) * Number(item.jumlah) * durasiHari);
+        // Gunakan Number(item.jumlah || 0) agar saat input kosong (NaN) perhitungan tidak rusak
+        totalSewaSemuaBarang += (Number(kategori.harga_per_hari) * Number(item.jumlah || 0) * durasiHari);
         
-        // Cari ongkir termahal di antara barang yang dipilih
         if (Number(kategori.ongkir_dasar) > ongkirDasarTertinggi) {
           ongkirDasarTertinggi = Number(kategori.ongkir_dasar);
         }
@@ -100,14 +99,22 @@ export default function BuatPenitipan() {
     }
   };
 
+  // --- PERBAIKAN LOGIKA UPDATE ITEM (JUMLAH) ---
   const updateItem = (index: number, field: string, value: string | number) => {
     const newItems = [...items];
+    
     if (field === "jumlah") {
-      const parsedValue = parseInt(value.toString());
-      newItems[index] = { 
-        ...newItems[index], 
-        [field]: isNaN(parsedValue) ? 0 : parsedValue 
-      };
+      // Jika input dihapus bersih oleh user
+      if (value === "") {
+        newItems[index] = { ...newItems[index], jumlah: "" as any };
+      } else {
+        const parsedValue = parseInt(value.toString());
+        // Set ke 0 jika NaN, atau ambil nilai positifnya
+        newItems[index] = { 
+          ...newItems[index], 
+          jumlah: isNaN(parsedValue) ? 0 : Math.max(0, parsedValue) 
+        };
+      }
     } else {
       newItems[index] = { ...newItems[index], [field]: value };
     }
@@ -118,6 +125,11 @@ export default function BuatPenitipan() {
     e.preventDefault();
     if (!session?.user?.id) return alert("Silakan login dahulu");
     if (!globalData.lokasi_id) return alert("Pilih lokasi gudang");
+    
+    // Validasi Jumlah Barang
+    const hasInvalidQty = items.some(i => !i.jumlah || Number(i.jumlah) < 1);
+    if (hasInvalidQty) return alert("Jumlah barang minimal 1 unit untuk setiap item");
+
     if (butuhJemput && !alamatJemput) return alert("Isi alamat penjemputan");
 
     setLoading(true);
@@ -133,7 +145,6 @@ export default function BuatPenitipan() {
       status: "pending",
       butuh_jemput: butuhJemput,
       alamat_jemput: butuhJemput ? alamatJemput : null,
-      // Ongkir dibagi rata per baris agar total di DB konsisten
       ongkir_final: butuhJemput ? kalkulasiBiaya.ongkir / items.length : 0,
     }));
 
@@ -151,34 +162,34 @@ export default function BuatPenitipan() {
   return (
     <div className="min-h-screen bg-slate-50 flex">
       <Sidebar />
-      <main className="flex-1 p-8 overflow-y-auto">
+      <main className="flex-1 p-8 overflow-y-auto font-sans">
         <div className="max-w-4xl mx-auto">
           <header className="mb-8">
             <h1 className="text-2xl font-bold text-slate-900">Pesan Penitipan Barang 📦</h1>
-            <p className="text-slate-600 font-medium">Lengkapi rincian untuk mendapatkan estimasi harga penjemputan & sewa.</p>
+            <p className="text-slate-600 font-medium italic">Lengkapi rincian untuk mendapatkan estimasi harga.</p>
           </header>
 
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* LOKASI & WAKTU */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><Calendar size={18} className="text-blue-600"/> Informasi Waktu & Tempat</h3>
+              <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2 tracking-tight"><Calendar size={18} className="text-blue-600"/> Informasi Waktu & Tempat</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="md:col-span-1">
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Gudang</label>
-                  <select required className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-900 font-medium outline-none focus:ring-2 focus:ring-blue-500"
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Gudang Tujuan</label>
+                  <select required className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 outline-none"
                     onChange={(e) => setGlobalData({...globalData, lokasi_id: e.target.value})}>
                     <option value="">-- Pilih Lokasi --</option>
                     {listLokasi.map((loc) => <option key={loc.id} value={loc.id}>{loc.nama_lokasi}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Mulai</label>
-                  <input type="date" required className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-900 font-medium"
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Tgl Mulai</label>
+                  <input type="date" required className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 outline-none"
                     onChange={(e) => setGlobalData({...globalData, tanggal_mulai: e.target.value})}/>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Selesai</label>
-                  <input type="date" required className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-900 font-medium"
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Tgl Selesai</label>
+                  <input type="date" required className="w-full px-4 py-2.5 rounded-lg border border-slate-300 text-slate-900 font-medium focus:ring-2 focus:ring-blue-500 outline-none"
                     onChange={(e) => setGlobalData({...globalData, tanggal_selesai: e.target.value})}/>
                 </div>
               </div>
@@ -187,38 +198,45 @@ export default function BuatPenitipan() {
             {/* DAFTAR BARANG */}
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="font-bold text-slate-800 flex items-center gap-2"><Package size={18} className="text-blue-600"/> Daftar Barang</h3>
-                <button type="button" onClick={addRow} className="text-xs bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-700">
-                  <Plus size={16}/> Tambah Item
+                <h3 className="font-bold text-slate-800 flex items-center gap-2 tracking-tight"><Package size={18} className="text-blue-600"/> Daftar Barang</h3>
+                <button type="button" onClick={addRow} className="text-xs bg-blue-600 text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-blue-700 transition-all">
+                  <Plus size={16}/> Tambah Baris
                 </button>
               </div>
               <div className="space-y-4">
                 {items.map((item, index) => (
-                  <div key={index} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 relative">
+                  <div key={index} className="p-4 rounded-xl border border-slate-100 bg-slate-50/50 relative group transition-all">
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                       <div className="md:col-span-3">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Kategori</label>
-                        <select required value={item.jenis_barang_id} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium"
+                        <select required value={item.jenis_barang_id} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                           onChange={(e) => updateItem(index, "jenis_barang_id", e.target.value)}>
                           <option value="">-- Pilih --</option>
                           {listJenis.map((j) => <option key={j.id} value={j.id}>{j.nama_jenis}</option>)}
                         </select>
                       </div>
                       <div className="md:col-span-6">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Deskripsi</label>
-                        <input required type="text" placeholder="Contoh: Meja Kayu, TV" value={item.deskripsi_barang}
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm"
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Deskripsi Barang</label>
+                        <input required type="text" placeholder="Contoh: Kursi Lipat, Dus Dokumen" value={item.deskripsi_barang}
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                           onChange={(e) => updateItem(index, "deskripsi_barang", e.target.value)} />
                       </div>
                       <div className="md:col-span-2">
-                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Jumlah</label>
-                        <input required type="number" min="1" value={item.jumlah}
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-bold text-center"
-                          onChange={(e) => updateItem(index, "jumlah", e.target.value)} />
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Jumlah</label>
+                        <input 
+                          required 
+                          type="number" 
+                          min="1" 
+                          value={item.jumlah}
+                          // --- FIX: SELECT ALL SAAT FOKUS ---
+                          onFocus={(e) => e.target.select()}
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-black text-center focus:ring-2 focus:ring-blue-600 outline-none bg-white"
+                          onChange={(e) => updateItem(index, "jumlah", e.target.value)} 
+                        />
                       </div>
                       <div className="md:col-span-1 flex justify-end">
                         {items.length > 1 && (
-                          <button type="button" onClick={() => removeRow(index)} className="p-2 text-red-500">
+                          <button type="button" onClick={() => removeRow(index)} className="p-2 text-slate-300 hover:text-red-500 transition-colors">
                             <Trash2 size={18}/>
                           </button>
                         )}
@@ -233,58 +251,63 @@ export default function BuatPenitipan() {
             <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="p-3 bg-orange-100 text-orange-600 rounded-xl"><Truck size={24} /></div>
+                  <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><Truck size={24} /></div>
                   <div>
-                    <h3 className="font-bold text-slate-800 text-sm">Butuh Penjemputan?</h3>
-                    <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider">Layanan Door-to-Door</p>
+                    <h3 className="font-bold text-slate-800 text-sm tracking-tight">Butuh Jasa Penjemputan?</h3>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">Layanan Kurir Door-to-Door</p>
                   </div>
                 </div>
-                <input type="checkbox" className="w-6 h-6 rounded text-blue-600" onChange={(e) => setButuhJemput(e.target.checked)} />
+                <input type="checkbox" className="w-6 h-6 rounded border-slate-300 text-blue-600 focus:ring-blue-500" onChange={(e) => setButuhJemput(e.target.checked)} />
               </div>
               {butuhJemput && (
-                <div className="mt-4 pt-4 border-t border-slate-100 animate-in fade-in duration-300">
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-2 tracking-widest">Alamat Penjemputan</label>
-                  <textarea required placeholder="Jl. Nama Jalan, No. Rumah, Kecamatan..."
-                    className="w-full px-4 py-3 rounded-lg border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none"
+                <div className="mt-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Detail Alamat Penjemputan</label>
+                  <textarea required placeholder="Jl. Nama Jalan, No. Rumah, RT/RW, Kelurahan..."
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
                     rows={3} onChange={(e) => setAlamatJemput(e.target.value)} />
                 </div>
               )}
             </div>
 
-            {/* RINGKASAN TAGIHAN */}
-            <div className="bg-slate-900 p-6 rounded-2xl text-white shadow-xl relative overflow-hidden">
+            {/* RINGKASAN ESTIMASI */}
+            <div className="bg-slate-900 p-8 rounded-[2rem] text-white shadow-2xl relative overflow-hidden group">
                <div className="relative z-10">
-                  <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4">
-                    <div className="flex items-center gap-3">
-                      <ReceiptText className="text-blue-400" size={20} />
-                      <span className="text-sm font-medium text-slate-400">Total Sewa ({kalkulasiBiaya.durasi} Hari)</span>
+                  <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-6">
+                    <div className="flex items-center gap-3 text-slate-400">
+                      <ReceiptText size={20} />
+                      <span className="text-xs font-bold uppercase tracking-widest">Biaya Sewa ({kalkulasiBiaya.durasi} Hari)</span>
                     </div>
-                    <span className="font-bold">Rp {kalkulasiBiaya.sewa.toLocaleString('id-ID')}</span>
+                    <span className="font-black text-lg">{kalkulasiBiaya.sewa.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 })}</span>
                   </div>
                   
                   {butuhJemput && (
-                    <div className="flex justify-between items-center mb-4 border-b border-white/10 pb-4 text-orange-400">
-                      <span className="text-sm font-medium">Biaya Jemput (Tarif Tertinggi)</span>
-                      <span className="font-bold">+ Rp {kalkulasiBiaya.ongkir.toLocaleString('id-ID')}</span>
+                    <div className="flex justify-between items-center mb-6 border-b border-white/5 pb-6 text-blue-400">
+                      <span className="text-xs font-bold uppercase tracking-widest">Biaya Logistik Penjemputan</span>
+                      <span className="font-black text-lg">+ {kalkulasiBiaya.ongkir.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 })}</span>
                     </div>
                   )}
 
-                  <div className="flex justify-between items-end">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
                     <div>
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-1">Total Estimasi Tagihan</p>
-                      <h2 className="text-3xl font-bold text-blue-400">Rp {kalkulasiBiaya.total.toLocaleString('id-ID')}</h2>
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-2">Total Estimasi Dibayar</p>
+                      <h2 className="text-4xl font-black text-blue-500 tracking-tighter italic">
+                        {kalkulasiBiaya.total.toLocaleString('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 })}
+                      </h2>
                     </div>
-                    <div className="bg-white/5 p-2 rounded-lg border border-white/10 flex items-center gap-2">
-                       <Info size={14} className="text-blue-400" />
-                       <span className="text-[10px] text-slate-400 font-medium">Bayar setelah barang diverifikasi</span>
+                    <div className="bg-white/5 p-3 rounded-2xl border border-white/10 flex items-center gap-3 backdrop-blur-sm">
+                       <Info size={16} className="text-blue-400" />
+                       <p className="text-[9px] text-slate-400 font-bold uppercase leading-tight">
+                         Status Tagihan: <span className="text-white">Menunggu Verifikasi Barang</span>
+                       </p>
                     </div>
                   </div>
                </div>
-               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16"></div>
+               {/* Efek dekoratif background */}
+               <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 rounded-full blur-[100px] -mr-32 -mt-32 group-hover:bg-blue-600/20 transition-all duration-700"></div>
             </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-blue-700 disabled:bg-slate-300 transition-all shadow-lg">
-              {loading ? <Loader2 className="animate-spin" /> : <>Konfirmasi Penitipan <ArrowRight size={18} /></>}
+            <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white py-5 rounded-2xl font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-blue-500 disabled:bg-slate-700 transition-all shadow-xl shadow-blue-900/20">
+              {loading ? <Loader2 className="animate-spin" /> : <>Buat Pesanan Sekarang <ArrowRight size={20} /></>}
             </button>
           </form>
         </div>

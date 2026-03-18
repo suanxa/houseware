@@ -9,7 +9,7 @@ import {
   CreditCard, QrCode, Upload, Image as ImageIcon, Truck, Package 
 } from "lucide-react";
 
-// --- Komponen Badge Status (Updated with new flow) ---
+// --- Komponen Badge Status
 function BadgeStatus({ status }: { status: string }) {
   const config: any = {
     pending: { color: "bg-slate-100 text-slate-600", icon: <Clock size={12} />, label: "Menunggu Review" },

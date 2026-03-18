@@ -16,7 +16,6 @@ export async function POST(req: Request) {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // 3. Simpan User ke tabel 'users'
-        // Kita simpan dengan status mungkin 'unverified' jika kamu ingin sistem verifikasi ketat
         const { data: newUser, error: userError } = await supabase
             .from("users")
             .insert({
@@ -36,7 +35,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Gagal menyimpan data user" }, { status: 500 });
         }
 
-        // 4. Proses OTP (seperti kode kamu sebelumnya)
+        // 4. Proses OTP 
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const expires = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 

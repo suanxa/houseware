@@ -49,13 +49,15 @@ export default function Sidebar() {
     ],
     admin: [
       { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
+      { name: "Kategori", href: "/admin/jenis-barang", icon: Package },
       { name: "Manajemen User", href: "/admin/users", icon: Users },
       { name: "Monitor Layanan", href: "/admin/monitor", icon: Settings },
+      
     ],
     superadmin: [
       { name: "Dashboard", href: "/dashboard/superadmin", icon: LayoutDashboard },
-      // Data Master tidak ditaruh di sini agar tidak kena looping spasi yang salah
       { name: "Semua Transaksi", href: "/superadmin/transaksi", icon: History },
+      { name: "Pengaturan", href: "/superadmin/settings", icon: Settings },
     ]
   };
 
@@ -99,7 +101,6 @@ export default function Sidebar() {
         <ChevronDown size={16} className={`transition-transform duration-300 ${isMasterOpen ? "rotate-180" : ""}`} />
       </button>
 
-      {/* Gunakan Conditional Rendering (isMasterOpen && ...) untuk menghilangkan ruang hantu */}
       {isMasterOpen && (
         <div className="pl-11 mt-1 mb-2 space-y-1 animate-in fade-in slide-in-from-top-1 duration-200">
           <SubMenuLink 
@@ -137,7 +138,6 @@ export default function Sidebar() {
   );
 }
 
-// Komponen Kecil untuk Sub-menu agar kode bersih
 function SubMenuLink({ href, label, icon, active }: any) {
   return (
     <Link 

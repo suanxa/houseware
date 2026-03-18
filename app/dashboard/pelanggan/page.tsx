@@ -40,7 +40,7 @@ export default function PelangganDashboard() {
         `, { count: 'exact' })
         .eq("user_id", session?.user?.id);
 
-      // 2. Ambil Data Angkutan (Pastikan created_at ikut terpanggil)
+      // 2. Ambil Data Angkutan 
       const { data: angkutan, count: countAngkutan } = await supabase
         .from("angkutan_barang")
         .select("*", { count: 'exact' })
@@ -68,7 +68,7 @@ export default function PelangganDashboard() {
         }
       });
 
-      // 4. GABUNGKAN DATA & SORTING (Berdasarkan created_at)
+      // 4. GABUNGKAN DATA & SORTING 
       const combinedOrders = [
         ...(penitipan?.map(p => ({ 
             ...p, 

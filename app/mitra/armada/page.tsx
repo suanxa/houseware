@@ -39,23 +39,37 @@ export default function KelolaArmadaMitra() {
   }
 
   async function handleAddArmada(e: React.FormEvent) {
-    e.preventDefault();
-    const { data: mitra } = await supabase.from("mitra").select("id").eq("user_id", session?.user?.id).single();
+  e.preventDefault();
+  
+  // 1. Ambil data mitra
+  const { data: mitra, error: mitraError } = await supabase
+    .from("mitra")
+    .select("id")
+    .eq("user_id", session?.user?.id)
+    .single();
     
-    const { error } = await supabase.from("armada").insert([{
-      mitra_id: mitra.id,
-      jenis_kendaraan: form.jenis_kendaraan,
-      plat_nomor: form.plat_nomor,
-      kapasitas: parseInt(form.kapasitas),
-      status: "tersedia"
-    }]);
-
-    if (!error) {
-      setShowModal(false);
-      setForm({ jenis_kendaraan: "", plat_nomor: "", kapasitas: "" });
-      fetchArmada();
-    }
+  // 2. Cek apakah mitra ditemukan 
+  if (mitraError || !mitra) {
+    alert("Data mitra tidak ditemukan. Silahkan hubungi admin.");
+    return;
   }
+
+  // 3. Insert armada 
+  const { error } = await supabase.from("armada").insert([{
+    mitra_id: mitra.id,
+    jenis_kendaraan: form.jenis_kendaraan,
+    plat_nomor: form.plat_nomor,
+    kapasitas: parseInt(form.kapasitas),
+    status: "tersedia"
+  }]);
+
+  if (error) {
+    alert("Gagal menambah armada: " + error.message);
+  } else {
+    setForm({ jenis_kendaraan: "", plat_nomor: "", kapasitas: "" });
+    fetchArmada(); 
+  }
+}
 
   async function deleteArmada(id: string) {
     if (confirm("Hapus armada ini?")) {

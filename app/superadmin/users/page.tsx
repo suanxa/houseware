@@ -198,7 +198,7 @@ export default function KelolaStaff() {
                     <input required className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-red-600 transition-all outline-none" placeholder="Masukkan nama staff..." onChange={(e) => setForm({...form, name: e.target.value})} />
                   </div>
                   <div>
-                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block tracking-widest">Email Perusahaan</label>
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-2 block tracking-widest">Email Staff</label>
                     <input required type="email" className="w-full p-4 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-red-600 transition-all outline-none" placeholder="email@houseware.com" onChange={(e) => setForm({...form, email: e.target.value})} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">

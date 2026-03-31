@@ -67,7 +67,7 @@ export default function KelolaLokasiMitra() {
       mitra_id: mitra.id, 
       nama_lokasi: form.nama_lokasi,
       alamat: form.alamat,
-      kapasitas_maksimal: parseInt(form.kapasitas) || 0,
+      kapasitas: parseInt(form.kapasitas) || 0,
       kapasitas_tersisa: parseInt(form.kapasitas) || 0,
       harga_per_hari: parseInt(form.harga_per_hari) || 0,
       status: "tersedia"
@@ -120,7 +120,7 @@ export default function KelolaLokasiMitra() {
                       <div className="flex justify-between items-center mb-2">
                         <p className="text-[10px] uppercase font-bold text-slate-400">Okupansi Gudang</p>
                         <p className="text-[10px] font-bold text-slate-900">
-                          {loc.kapasitas_maksimal - loc.kapasitas_tersisa} / {loc.kapasitas_maksimal} Slot Terpakai
+                          {loc.kapasitas - loc.kapasitas_tersisa} / {loc.kapasitas} Slot Terpakai
                         </p>
                       </div>
                       
@@ -128,10 +128,10 @@ export default function KelolaLokasiMitra() {
                       <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
                         <div 
                           className={`h-full transition-all duration-500 ${
-                            (loc.kapasitas_tersisa / loc.kapasitas_maksimal) < 0.2 ? 'bg-red-500' : 'bg-blue-500'
+                            (loc.kapasitas_tersisa / loc.kapasitas) < 0.2 ? 'bg-red-500' : 'bg-blue-500'
                           }`}
                           style={{ 
-                            width: `${((loc.kapasitas_maksimal - loc.kapasitas_tersisa) / loc.kapasitas_maksimal) * 100}%` 
+                            width: `${((loc.kapasitas - loc.kapasitas_tersisa) / loc.kapasitas) * 100}%` 
                           }}
                         />
                         </div> 
@@ -140,7 +140,7 @@ export default function KelolaLokasiMitra() {
                         </p>
                       </div>
                     <div className="bg-slate-50 p-3 rounded-2xl">
-                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Harga / Hari</p>
+                    <p className="text-[10px] uppercase font-bold text-slate-400 mb-1">Harga Sewa</p>
                     <p className="text-sm font-bold text-emerald-600">
                         {/* Tambahkan pengecekan loc.harga_per_hari sebelum toLocaleString */}
                         Rp {loc.harga_per_hari ? Number(loc.harga_per_hari).toLocaleString('id-ID') : '0'}
@@ -181,7 +181,7 @@ export default function KelolaLokasiMitra() {
                       <input required type="number" placeholder="100" className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" onChange={(e) => setForm({...form, kapasitas: e.target.value})} />
                     </div>
                     <div>
-                      <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Harga Sewa / Hari</label>
+                      <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Harga Sewa</label>
                       <input required type="number" placeholder="50000" className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" onChange={(e) => setForm({...form, harga_per_hari: e.target.value})} />
                     </div>
                   </div>

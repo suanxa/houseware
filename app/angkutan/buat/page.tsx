@@ -163,8 +163,8 @@ export default function BuatAngkutan() {
             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-start gap-3">
               <Info className="text-blue-600 mt-0.5" size={18} />
               <p className="text-xs text-blue-700 leading-relaxed">
-                Harga sudah termasuk jasa driver dan bahan bakar. Jika membutuhkan <strong>Tenaga Angkut Tambahan (Kuli)</strong>, silakan konfirmasi kepada admin setelah pesanan dibuat. 
-                <strong>Biaya juga akan ditambahkan jika barang melebihi kapasitas</strong>
+                Harga sudah termasuk jasa driver dan bahan bakar. Jika membutuhkan <strong>Tenaga Angkut Tambahan (Kuli)</strong> atau  
+                <strong> barang melebihi kapasitas</strong> maka ditambahkan <strong> biaya </strong>ketika di Lapangan.
               </p>
             </div>
 

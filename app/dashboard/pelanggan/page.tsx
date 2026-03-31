@@ -49,7 +49,7 @@ export default function PelangganDashboard() {
       // 3. LOGIKA HITUNG TOTAL TAGIHAN GABUNGAN (Filter Status)
       let totalTagihan = 0;
       // Tagihan aktif hanya dihitung jika sudah disetujui admin atau sedang berjalan
-      const statusTagihanAktif = ['waiting_payment', 'waiting_confirmation', 'active'];
+      const statusTagihanAktif = ['waiting_payment', 'waiting_confirmation'];
 
       // Hitung dari Penitipan
       penitipan?.forEach((order: any) => {

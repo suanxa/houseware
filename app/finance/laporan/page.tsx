@@ -30,69 +30,57 @@ export default function LaporanFinance() {
   async function fetchInitialData() {
     setLoading(true);
     try {
-      // 1. Ambil data mitra untuk dropdown filter
+      // 1. Ambil data mitra
       const { data: mData } = await supabase.from("mitra").select("id, nama_mitra");
       setMitras(mData || []);
 
-      // 2. Ambil data pembayaran berhasil
+      // 2. Ambil data pembayaran
       const { data: payments } = await supabase
         .from("pembayaran")
         .select(`*, users ( name )`)
         .in("status", ["lunas", "berhasil", "Lunas", "Berhasil"])
         .order("tanggal_bayar", { ascending: false });
 
-      // 3. Ambil data pendukung untuk hitung bagi hasil (dengan join mitra)
+      // 3. Ambil data pendukung (Gunakan inner join untuk efisiensi jika perlu)
       const { data: penitipan } = await supabase.from("penitipan_barang")
-        .select(`
-          id, tanggal_mulai, tanggal_selesai, 
-          lokasi_penitipan ( mitra_id, harga_per_hari )
-        `) as any;
+        .select(`id, lokasi_penitipan ( mitra_id )`) as any;
 
       const { data: angkutan } = await supabase.from("angkutan_barang")
         .select("id, mitra") as any;
 
-      const getDurasi = (m: string, s: string) => {
-        const d1 = new Date(m);
-        const d2 = new Date(s);
-        return Math.ceil(Math.abs(d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) || 1;
-      };
-
+      // --- LOGIKA PEMETAAN DATA BARU (FLAT 80/20) ---
       const mappedData = (payments || []).map(p => {
-        let netAdmin = 0;
-        let toMitra = 0;
         let mitraId = null;
         const nominal = Number(p.total_bayar) || 0;
 
+        // Mendeteksi ID Mitra berdasarkan jenis layanan
         if (p.jenis_layanan?.toLowerCase() === 'penitipan') {
           const detail = penitipan?.find((d: any) => d.id === p.transaksi_id);
-          if (detail) {
-            mitraId = detail.lokasi_penitipan?.mitra_id;
-            const durasi = getDurasi(detail.tanggal_mulai, detail.tanggal_selesai);
-            const hargaGudang = detail.lokasi_penitipan?.harga_per_hari || 0;
-            const biayaGudangMitra = Number(hargaGudang) * durasi;
-            
-            if (nominal > biayaGudangMitra) {
-              toMitra = biayaGudangMitra;
-              netAdmin = nominal - biayaGudangMitra;
-            } else {
-              netAdmin = nominal;
-            }
-          }
+          mitraId = detail?.lokasi_penitipan?.mitra_id;
         } else {
           const detailAng = angkutan?.find((d: any) => d.id === p.transaksi_id);
           mitraId = detailAng?.mitra;
-          toMitra = nominal * 0.8;
-          netAdmin = nominal * 0.2;
         }
+
+        // PERHITUNGAN BARU: Langsung 80% untuk Mitra, 20% untuk Admin
+        // Tanpa syarat perbandingan harga gudang lagi
+        const toMitra = nominal * 0.8;
+        const netAdmin = nominal * 0.2;
 
         const mitraObj = mData?.find(m => m.id === mitraId);
 
-        return { ...p, netAdmin, toMitra, mitra_id: mitraId, nama_mitra: mitraObj?.nama_mitra || 'Internal' };
+        return { 
+          ...p, 
+          netAdmin, 
+          toMitra, 
+          mitra_id: mitraId, 
+          nama_mitra: mitraObj?.nama_mitra || 'Internal/Sistem' 
+        };
       });
 
       setDataLaporan(mappedData);
     } catch (error) {
-      console.error(error);
+      console.error("Error fetching financial data:", error);
     } finally {
       setLoading(false);
     }

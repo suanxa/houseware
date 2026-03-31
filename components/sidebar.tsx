@@ -41,6 +41,7 @@ export default function Sidebar() {
       { name: "Lokasi Saya", href: "/mitra/lokasi", icon: MapPin },
       { name: "Kelola Armada", href: "/mitra/armada", icon: Truck },
       { name: "Konfirmasi Pesanan", href: "/mitra/update-status", icon: Package },
+      {name: "Pengaturan Akun", href: "/mitra/settings", icon: Users },
     ],
     finance: [
       { name: "Dashboard", href: "/dashboard/finance", icon: LayoutDashboard },

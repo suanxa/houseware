@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import Sidebar from "@/components/sidebar";
 import { 
   Truck, Plus, Trash2, 
-  CheckCircle, AlertTriangle, Loader2, X 
+  Loader2, X 
 } from "lucide-react";
 
 export default function KelolaArmadaMitra() {
@@ -39,37 +39,40 @@ export default function KelolaArmadaMitra() {
   }
 
   async function handleAddArmada(e: React.FormEvent) {
-  e.preventDefault();
-  
-  // 1. Ambil data mitra
-  const { data: mitra, error: mitraError } = await supabase
-    .from("mitra")
-    .select("id")
-    .eq("user_id", session?.user?.id)
-    .single();
+    e.preventDefault();
     
-  // 2. Cek apakah mitra ditemukan 
-  if (mitraError || !mitra) {
-    alert("Data mitra tidak ditemukan. Silahkan hubungi admin.");
-    return;
-  }
+    // 1. Ambil data mitra
+    const { data: mitra, error: mitraError } = await supabase
+      .from("mitra")
+      .select("id")
+      .eq("user_id", session?.user?.id)
+      .single();
+      
+    // 2. Cek apakah mitra ditemukan 
+    if (mitraError || !mitra) {
+      alert("Data mitra tidak ditemukan. Silahkan hubungi admin.");
+      return;
+    }
 
-  // 3. Insert armada 
-  const { error } = await supabase.from("armada").insert([{
-    mitra_id: mitra.id,
-    jenis_kendaraan: form.jenis_kendaraan,
-    plat_nomor: form.plat_nomor,
-    kapasitas: parseInt(form.kapasitas),
-    status: "tersedia"
-  }]);
+    // 3. Insert armada 
+    const { error } = await supabase.from("armada").insert([{
+      mitra_id: mitra.id,
+      jenis_kendaraan: form.jenis_kendaraan,
+      plat_nomor: form.plat_nomor,
+      kapasitas: parseInt(form.kapasitas),
+      status: "tersedia"
+    }]);
 
-  if (error) {
-    alert("Gagal menambah armada: " + error.message);
-  } else {
-    setForm({ jenis_kendaraan: "", plat_nomor: "", kapasitas: "" });
-    fetchArmada(); 
+    if (error) {
+      alert("Gagal menambah armada: " + error.message);
+    } else {
+      // --- PERBAIKAN DI SINI ---
+      setShowModal(false); // Menutup modal otomatis setelah berhasil
+      setForm({ jenis_kendaraan: "", plat_nomor: "", kapasitas: "" }); // Reset form agar bersih kembali
+      fetchArmada(); // Refresh daftar data di layar
+      alert("Armada berhasil ditambahkan!");
+    }
   }
-}
 
   async function deleteArmada(id: string) {
     if (confirm("Hapus armada ini?")) {
@@ -149,7 +152,8 @@ export default function KelolaArmadaMitra() {
                   <input 
                     required 
                     placeholder="Contoh: Mitsubishi L300 / Truk Engkel"
-                    className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900"
+                    className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
+                    value={form.jenis_kendaraan}
                     onChange={(e) => setForm({...form, jenis_kendaraan: e.target.value})}
                   />
                 </div>
@@ -159,7 +163,8 @@ export default function KelolaArmadaMitra() {
                     <input 
                       required 
                       placeholder="B 1234 ABC"
-                      className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900"
+                      className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
+                      value={form.plat_nomor}
                       onChange={(e) => setForm({...form, plat_nomor: e.target.value})}
                     />
                   </div>
@@ -169,12 +174,13 @@ export default function KelolaArmadaMitra() {
                       required 
                       type="number"
                       placeholder="1000"
-                      className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900"
+                      className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
+                      value={form.kapasitas}
                       onChange={(e) => setForm({...form, kapasitas: e.target.value})}
                     />
                   </div>
                 </div>
-                <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold mt-4">Simpan Armada</button>
+                <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold mt-4 hover:bg-slate-800 transition-all">Simpan Armada</button>
               </form>
             </div>
           </div>

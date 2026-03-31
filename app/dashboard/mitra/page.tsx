@@ -12,6 +12,7 @@ import Link from "next/link";
 export default function MitraDashboard() {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
+  const [isProfileComplete, setIsProfileComplete] = useState(true); // State baru untuk kontrol banner
   const [stats, setStats] = useState({ baru: 0, lokasi: 0, armada: 0, alert: 0, pendapatan: 0 });
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
@@ -25,67 +26,85 @@ export default function MitraDashboard() {
   async function fetchMitraData() {
     setLoading(true);
     try {
-      const { data: mitra } = await supabase
+      // 1. Ambil data mitra
+      const { data: mitra, error: mitraError } = await supabase
         .from("mitra")
         .select("id")
         .eq("user_id", session?.user?.id)
         .single();
 
-      if (mitra) {
-        const { count: cLokasi } = await supabase.from("lokasi_penitipan").select("*", { count: 'exact', head: true }).eq("mitra_id", mitra.id);
-        const { count: cArmada } = await supabase.from("armada").select("*", { count: 'exact', head: true }).eq("mitra_id", mitra.id);
-        
-        // Ambil data penitipan & angkutan (semua status untuk tabel, tapi nanti difilter untuk saldo)
-        const { data: penitipan } = await supabase
-          .from("penitipan_barang")
-          .select("*, users(name), jenis_barang:jenis_barang_id(harga_per_hari), lokasi_penitipan!inner(harga_per_hari)")
-          .eq("lokasi_penitipan.mitra_id", mitra.id);
-
-        const { data: angkutan } = await supabase
-          .from("angkutan_barang")
-          .select("*, users(name)")
-          .eq("mitra", mitra.id);
-
-        const getDurasi = (m: string, s: string) => {
-          const d1 = new Date(m);
-          const d2 = new Date(s);
-          return Math.ceil(Math.abs(d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) || 1;
-        };
-
-        // --- Logika Pendapatan HANYA yang Completed ---
-        const hitungHak = (item: any, tipe: 'pen' | 'ang') => {
-          if (tipe === 'pen') {
-            const durasi = getDurasi(item.tanggal_mulai, item.tanggal_selesai);
-            const totalTagihan = ((item.jenis_barang?.harga_per_hari || 0) * (item.jumlah || 1) * durasi) + (Number(item.ongkir_final) || 0);
-            const hargaGudang = (item.lokasi_penitipan?.harga_per_hari || 0) * durasi;
-            return totalTagihan > hargaGudang ? hargaGudang : 0;
-          } else {
-            return (Number(item.total_biaya) || 0) * 0.8;
-          }
-        };
-
-        // Filter hanya yang sudah selesai untuk Saldo
-        const lunasPen = (penitipan || []).filter(p => ['completed', 'selesai'].includes(p.status?.toLowerCase()));
-        const lunasAng = (angkutan || []).filter(a => ['completed', 'selesai'].includes(a.status?.toLowerCase()));
-
-        const totalPendapatan = 
-          lunasPen.reduce((sum, p) => sum + hitungHak(p, 'pen'), 0) +
-          lunasAng.reduce((sum, a) => sum + hitungHak(a, 'ang'), 0);
-
-        const combined = [
-          ...(penitipan?.map(p => ({ ...p, tipe: 'Penitipan', hak: hitungHak(p, 'pen') })) || []),
-          ...(angkutan?.map(a => ({ ...a, tipe: 'Angkutan', hak: hitungHak(a, 'ang') })) || [])
-        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-        setStats({
-          baru: combined.filter(o => o.status === 'active').length,
-          lokasi: cLokasi || 0,
-          armada: cArmada || 0,
-          alert: combined.filter(o => o.status === 'active').length,
-          pendapatan: totalPendapatan
-        });
-        setRecentOrders(combined.slice(0, 5));
+      // LOGIKA BARU: Jika mitra tidak ditemukan (Error single() atau data null)
+      if (mitraError || !mitra) {
+        setIsProfileComplete(false); // Sembunyikan fitur lain, tampilkan banner
+        setStats(prev => ({ ...prev, alert: 1 }));
+        setLoading(false);
+        return; 
       }
+
+      // Jika ada data mitra, pastikan banner tidak muncul
+      setIsProfileComplete(true);
+
+      // 2. Jika mitra ditemukan, lanjutkan ambil data seperti biasa (Logika Asli Anda)
+      const { count: cLokasi } = await supabase.from("lokasi_penitipan").select("*", { count: 'exact', head: true }).eq("mitra_id", mitra.id);
+      const { count: cArmada } = await supabase.from("armada").select("*", { count: 'exact', head: true }).eq("mitra_id", mitra.id);
+      
+      const { data: penitipan } = await supabase
+        .from("penitipan_barang")
+        .select("*, users(name), jenis_barang:jenis_barang_id(harga_per_hari), lokasi_penitipan!inner(harga_per_hari)")
+        .eq("lokasi_penitipan.mitra_id", mitra.id);
+
+      const { data: angkutan } = await supabase
+        .from("angkutan_barang")
+        .select("*, users(name)")
+        .eq("mitra", mitra.id);
+
+      const getDurasi = (m: string, s: string) => {
+              const d1 = new Date(m);
+              const d2 = new Date(s);
+              return Math.ceil(Math.abs(d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) || 1;
+            };
+
+            // --- PERBAIKAN LOGIKA HAK MITRA (FLAT 80%) ---
+            const hitungHak = (item: any, tipe: 'pen' | 'ang') => {
+              if (tipe === 'pen') {
+                const durasi = getDurasi(item.tanggal_mulai, item.tanggal_selesai);
+                
+                // Hitung total bayar pelanggan (Sewa + Ongkir)
+                const totalTagihan = 
+                  ((item.jenis_barang?.harga_per_hari || 0) * (item.jumlah || 1) * durasi) + 
+                  (Number(item.ongkir_final) || 0);
+                
+                // Mitra langsung dapat 80% dari total tagihan tanpa syarat harga gudang
+                return totalTagihan * 0.8;
+              } else {
+                // Angkutan juga tetap 80%
+                return (Number(item.total_biaya) || 0) * 0.8;
+              }
+            };
+
+      const lunasPen = (penitipan || []).filter(p => ['completed', 'selesai'].includes(p.status?.toLowerCase()));
+      const lunasAng = (angkutan || []).filter(a => ['completed', 'selesai'].includes(a.status?.toLowerCase()));
+
+      const totalPendapatan = 
+        lunasPen.reduce((sum, p) => sum + hitungHak(p, 'pen'), 0) +
+        lunasAng.reduce((sum, a) => sum + hitungHak(a, 'ang'), 0);
+
+      const combined = [
+        ...(penitipan?.map(p => ({ ...p, tipe: 'Penitipan', hak: hitungHak(p, 'pen') })) || []),
+        ...(angkutan?.map(a => ({ ...a, tipe: 'Angkutan', hak: hitungHak(a, 'ang') })) || [])
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setStats({
+        baru: combined.filter(o => o.status === 'active').length,
+        lokasi: cLokasi || 0,
+        armada: cArmada || 0,
+        alert: 0,
+        pendapatan: totalPendapatan
+      });
+      setRecentOrders(combined.slice(0, 5));
+      
+    } catch (error) {
+      console.error("Dashboard Error:", error);
     } finally {
       setLoading(false);
     }
@@ -113,7 +132,25 @@ export default function MitraDashboard() {
           </div>
         </header>
 
-        {/* --- HERO CARD PENDAPATAN (HANYA COMPLETED) --- */}
+        {/* LOGIKA PERBAIKAN BANNER: Hanya muncul jika profil benar-benar tidak ada di DB */}
+        {!loading && !isProfileComplete && (
+          <div className="mb-8 bg-amber-50 border-l-4 border-amber-500 p-6 rounded-2xl flex items-center justify-between shadow-sm animate-pulse">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-amber-500 text-white rounded-xl">
+                <AlertCircle size={24} />
+              </div>
+              <div>
+                <h4 className="font-bold text-amber-900">Profil Bisnis Belum Lengkap!</h4>
+                <p className="text-amber-700 text-sm">Silakan lengkapi identitas mitra Anda untuk mulai menggunakan layanan House Ware.</p>
+              </div>
+            </div>
+            <Link href="/mitra/settings" className="bg-amber-500 text-white px-6 py-2 rounded-xl font-bold text-sm hover:bg-amber-600 transition-all">
+              Lengkapi Profil
+            </Link>
+          </div>
+        )}
+
+        {/* --- HERO CARD PENDAPATAN --- */}
         <div className="w-full mb-8">
            <div className="bg-slate-900 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden group">
               <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -141,7 +178,7 @@ export default function MitraDashboard() {
            </div>
         </div>
 
-        {/* Statistik Cepat (4 Card Asli) */}
+        {/* Statistik Cepat */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <StatCard icon={<PackageSearch size={20} />} label="Tugas Aktif" value={stats.baru} color="blue" badge="ACTIVE" />
           <StatCard icon={<Warehouse size={20} />} label="Lokasi Aktif" value={stats.lokasi} color="green" />
@@ -149,7 +186,7 @@ export default function MitraDashboard() {
           <StatCard icon={<AlertCircle size={20} />} label="Perlu Update" value={stats.alert} color="red" />
         </div>
 
-        {/* ... Management Links ... */}
+        {/* Management Links */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 flex items-center space-x-6 hover:border-amber-500 transition-colors">
             <div className="flex-1">
@@ -170,7 +207,7 @@ export default function MitraDashboard() {
           </div>
         </div>
 
-        {/* Tabel Layanan - Menampilkan rincian hak per baris */}
+        {/* Tabel Layanan */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
           <div className="p-6 border-b border-slate-100 flex justify-between items-center">
             <h3 className="font-bold text-slate-900">Tugas Layanan & Estimasi Hak</h3>
@@ -200,7 +237,6 @@ export default function MitraDashboard() {
                       </td>
                       <td className="p-4 font-black text-slate-900">
                         {formatIDR(order.hak)}
-                        {/* Keterangan jika belum masuk saldo */}
                         {!['completed', 'selesai'].includes(order.status?.toLowerCase()) && (
                           <p className="text-[8px] text-amber-500 font-bold uppercase">Pending Saldo</p>
                         )}

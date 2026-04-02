@@ -112,8 +112,8 @@ export default function KelolaArmadaMitra() {
             <div className="col-span-full py-20 text-center"><Loader2 className="animate-spin mx-auto text-slate-400" /></div>
           ) : armada.length > 0 ? (
             armada.map((item) => (
-              <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative group">
-                <button onClick={() => deleteArmada(item.id)} className="absolute top-4 right-4 text-slate-200 hover:text-red-500 transition-colors">
+              <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-300 relative group">
+                <button onClick={() => deleteArmada(item.id)} className="absolute top-4 right-4 text-slate-200 hover:text-red-500 border border-slate-300 rounded-full p-1 transition-colors">
                   <Trash2 size={16} />
                 </button>
                 
@@ -160,16 +160,16 @@ export default function KelolaArmadaMitra() {
               <form onSubmit={handleAddArmada} className="p-6 space-y-4">
                 <div>
                   <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Jenis Kendaraan</label>
-                  <input required className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="Contoh: Mitsubishi L300" onChange={(e) => setForm({...form, jenis_kendaraan: e.target.value})} />
+                  <input required className="w-full p-3 text-slate-900 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="Contoh: Mitsubishi L300" onChange={(e) => setForm({...form, jenis_kendaraan: e.target.value})} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Plat Nomor</label>
-                    <input required className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="B 1234 ABC" onChange={(e) => setForm({...form, plat_nomor: e.target.value})} />
+                    <input required className="w-full text-slate-900 p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="B 1234 ABC" onChange={(e) => setForm({...form, plat_nomor: e.target.value})} />
                   </div>
                   <div>
                     <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Kapasitas (Kg)</label>
-                    <input required type="number" className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="1000" onChange={(e) => setForm({...form, kapasitas: e.target.value})} />
+                    <input required type="number" className="w-full p-3 text-slate-900 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="1000" onChange={(e) => setForm({...form, kapasitas: e.target.value})} />
                   </div>
                 </div>
                 {/* Input Harga Sewa Baru */}
@@ -177,7 +177,7 @@ export default function KelolaArmadaMitra() {
                   <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Harga Sewa (Per Jasa)</label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
-                    <input required type="number" className="w-full p-3 pl-10 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="150000" onChange={(e) => setForm({...form, harga_sewa: e.target.value})} />
+                    <input required type="number" className="w-full p-3 text-slate-900 pl-10 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="150000" onChange={(e) => setForm({...form, harga_sewa: e.target.value})} />
                   </div>
                 </div>
                 <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold mt-4 hover:bg-slate-800 transition-all">Simpan Armada</button>

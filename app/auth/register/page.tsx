@@ -100,7 +100,7 @@ export default function RegisterPage() {
                             required
                             value={otp}
                             onChange={(e) => setOtp(e.target.value)}
-                            className="w-full p-4 border-2 border-slate-200 rounded-xl text-center text-3xl tracking-[1rem] font-bold focus:border-blue-500 focus:ring-0 outline-none transition-all"
+                            className="w-full p-4 border-2 border-slate-200 text-black rounded-xl text-center text-3xl tracking-[1rem] font-bold focus:border-blue-500 focus:ring-0 outline-none transition-all"
                         />
 
                         <button 

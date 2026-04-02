@@ -235,11 +235,11 @@ async function fetchAllOrders() {
                   <div className="grid grid-cols-2 gap-3 mb-6">
                     <button onClick={() => setPaymentMethod('qris')} className={`p-3 border-2 rounded-xl flex flex-col items-center gap-1 ${paymentMethod === 'qris' ? 'border-blue-600 bg-blue-50' : 'border-slate-100'}`}>
                       <QrCode size={20} className={paymentMethod === 'qris' ? 'text-blue-600' : 'text-slate-400'} />
-                      <span className="text-[10px] font-bold">QRIS</span>
+                      <span className="text-[10px] text-black font-bold">QRIS</span>
                     </button>
                     <button onClick={() => setPaymentMethod('bank')} className={`p-3 border-2 rounded-xl flex flex-col items-center gap-1 ${paymentMethod === 'bank' ? 'border-blue-600 bg-blue-50' : 'border-slate-100'}`}>
                       <CreditCard size={20} className={paymentMethod === 'bank' ? 'text-blue-600' : 'text-slate-400'} />
-                      <span className="text-[10px] font-bold">BANK</span>
+                      <span className="text-[10px] text-black font-bold">BANK</span>
                     </button>
                   </div>
 
@@ -255,10 +255,41 @@ async function fetchAllOrders() {
                           <p className="text-xs">Scan QRIS untuk menyelesaikan pembayaran</p>
                         )}
                       </div>
-                      <div className="relative border-2 border-dashed rounded-xl p-6 text-center hover:border-blue-500 cursor-pointer">
-                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+                      <div className="relative border-2 border-dashed rounded-xl p-6 text-center hover:border-blue-500 cursor-pointer transition-all">
+                        <input 
+                          type="file" 
+                          // Filter 1: Hanya menampilkan gambar saat pilih file
+                          accept="image/*" 
+                          className="absolute inset-0 opacity-0 cursor-pointer" 
+                          onChange={(e) => {
+                            const selectedFile = e.target.files?.[0];
+
+                            // Filter 2: Validasi Tipe File (Sistem)
+                            if (selectedFile) {
+                              if (!selectedFile.type.startsWith("image/")) {
+                                alert("Format file tidak didukung! Harap upload file gambar (JPG, PNG, HEIC atau WEBP).");
+                                e.target.value = ""; // Reset input HTML
+                                setFile(null); // Reset state React
+                                return;
+                              }
+
+                              // Opsional: Batasi Ukuran File (Misal max 2MB agar tidak berat di storage)
+                              if (selectedFile.size > 5 * 1024 * 1024) {
+                                alert("File terlalu besar! Maksimal ukuran gambar adalah 2MB.");
+                                e.target.value = "";
+                                setFile(null);
+                                return;
+                              }
+
+                              // Jika lolos semua filter, baru masukkan ke state
+                              setFile(selectedFile);
+                            }
+                          }} 
+                        />
                         <Upload className="mx-auto mb-1 text-slate-400" size={20} />
-                        <p className="text-[10px] font-bold text-slate-500">{file ? file.name : "Upload Bukti Transfer"}</p>
+                        <p className="text-[10px] font-bold text-slate-500 truncate px-2">
+                          {file ? file.name : "Upload Bukti Transfer (Gambar Only)"}
+                        </p>
                       </div>
                       <button 
                         disabled={!file || uploading} 

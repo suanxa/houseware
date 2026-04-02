@@ -171,15 +171,24 @@ export default function CRUDJenisBarang() {
                         Rp {item.ongkir_dasar.toLocaleString()}
                       </td>
                       <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <button onClick={() => handleOpenModal(item)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg">
-                            <Edit3 size={18} />
-                          </button>
-                          <button onClick={() => handleDelete(item.id)} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg">
-                            <Trash2 size={18} />
-                          </button>
-                        </div>
-                      </td>
+  {/* Menghapus opacity-0 dan group-hover agar selalu terlihat */}
+  <div className="flex justify-end gap-1 transition-opacity">
+    <button 
+      onClick={() => handleOpenModal(item)} 
+      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+      title="Edit Data"
+    >
+      <Edit3 size={18} />
+    </button>
+    <button 
+      onClick={() => handleDelete(item.id)} 
+      className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+      title="Hapus Data"
+    >
+      <Trash2 size={18} />
+    </button>
+  </div>
+</td>
                     </tr>
                   ))}
                 </tbody>
@@ -226,11 +235,19 @@ export default function CRUDJenisBarang() {
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Harga / Hari</label>
                     <div className="relative mt-1">
                       <Banknote className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300" size={16} />
-                      <input 
-                        type="number"
+                     <input 
+                      type="number"
                         required
-                        value={formData.harga_per_hari}
-                        onChange={(e) => setFormData({...formData, harga_per_hari: Number(e.target.value)})}
+                        placeholder="0"
+                        // --- PERBAIKAN DI SINI ---
+                        // Jika harga_per_hari adalah 0, tampilkan string kosong agar placeholder muncul
+                        value={formData.harga_per_hari === 0 ? "" : formData.harga_per_hari}
+                        onChange={(e) => {
+                          // Jika input dikosongkan, kembalikan ke nilai 0 agar tidak error di database
+                          const val = e.target.value === "" ? 0 : Number(e.target.value);
+                          setFormData({ ...formData, harga_per_hari: val });
+                        }}
+                        // -------------------------
                         className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium"
                       />
                     </div>
@@ -243,9 +260,15 @@ export default function CRUDJenisBarang() {
                       <input 
                         type="number"
                         required
-                        value={formData.ongkir_dasar}
-                        onChange={(e) => setFormData({...formData, ongkir_dasar: Number(e.target.value)})}
-                        className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium"
+                        placeholder="0"
+                        // Jika ongkir_dasar adalah 0, tampilkan string kosong agar tidak ada angka '0' yang mengganggu
+                        value={formData.ongkir_dasar === 0 ? "" : formData.ongkir_dasar}
+                        onChange={(e) => {
+                          // Jika input dihapus semua (kosong), kembalikan ke nilai 0 untuk database
+                          const val = e.target.value === "" ? 0 : Number(e.target.value);
+                          setFormData({ ...formData, ongkir_dasar: val });
+                        }}
+                        className="w-full pl-9 pr-4 py-3 bg-slate-50 border border-slate-100 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none font-medium transition-all"
                       />
                     </div>
                   </div>

@@ -202,27 +202,27 @@ export default function KelolaStaff() {
               <form onSubmit={handleSubmit} className="p-8 space-y-4">
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Nama Lengkap</label>
-                  <input required value={form.name} className="w-full p-4 bg-slate-50 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-red-600" onChange={(e) => setForm({...form, name: e.target.value})} />
+                  <input required value={form.name} className="w-full p-4 bg-slate-50 text-slate-900 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-red-600" onChange={(e) => setForm({...form, name: e.target.value})} />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Nomor HP</label>
-                  <input required value={form.phone} className="w-full p-4 bg-slate-50 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-red-600" onChange={(e) => setForm({...form, phone: e.target.value})} />
+                  <input required value={form.phone} className="w-full p-4 bg-slate-50 text-slate-900 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-red-600" onChange={(e) => setForm({...form, phone: e.target.value})} />
                 </div>
                 <div>
                   <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Email Resmi</label>
-                  <input required type="email" value={form.email} className="w-full p-4 bg-slate-50 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-red-600" onChange={(e) => setForm({...form, email: e.target.value})} />
+                  <input required type="email" value={form.email} className="w-full p-4 text-slate-900 bg-slate-50 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-red-600" onChange={(e) => setForm({...form, email: e.target.value})} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Role</label>
-                    <select value={form.role} className="w-full p-4 bg-slate-50 rounded-2xl text-sm outline-none" onChange={(e) => setForm({...form, role: e.target.value})}>
+                    <select value={form.role} className="w-full p-4 bg-slate-50 rounded-2xl text-slate-900 text-sm outline-none" onChange={(e) => setForm({...form, role: e.target.value})}>
                       <option value="admin">ADMIN</option>
                       <option value="finance">FINANCE</option>
                     </select>
                   </div>
                   <div>
                     <label className="text-[10px] font-black text-slate-400 uppercase mb-2 block tracking-widest">Password {isEdit && "(Opsional)"}</label>
-                    <input required={!isEdit} type="password" value={form.password} className="w-full p-4 bg-slate-50 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-red-600" placeholder="••••••" onChange={(e) => setForm({...form, password: e.target.value})} />
+                    <input required={!isEdit} type="password" value={form.password} className="w-full p-4 bg-slate-50 rounded-2xl text-slate-900 text-sm outline-none focus:ring-2 focus:ring-red-600" placeholder="••••••" onChange={(e) => setForm({...form, password: e.target.value})} />
                   </div>
                 </div>
                 <button type="submit" className="w-full bg-slate-900 text-white py-5 rounded-[2rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-red-600 transition-all shadow-xl active:scale-95">

@@ -209,7 +209,7 @@ export default function BuatPenitipan() {
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
                       <div className="md:col-span-3">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Kategori</label>
-                        <select required value={item.jenis_barang_id} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                        <select required value={item.jenis_barang_id} className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-medium focus:ring-2 text-slate-900 focus:ring-blue-500 outline-none bg-white"
                           onChange={(e) => updateItem(index, "jenis_barang_id", e.target.value)}>
                           <option value="">-- Pilih --</option>
                           {listJenis.map((j) => <option key={j.id} value={j.id}>{j.nama_jenis}</option>)}
@@ -218,7 +218,7 @@ export default function BuatPenitipan() {
                       <div className="md:col-span-6">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1">Deskripsi Barang</label>
                         <input required type="text" placeholder="Contoh: Kursi Lipat, Dus Dokumen" value={item.deskripsi_barang}
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
+                          className="w-full px-3 py-2 rounded-lg border text-slate-900 border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white"
                           onChange={(e) => updateItem(index, "deskripsi_barang", e.target.value)} />
                       </div>
                       <div className="md:col-span-2">
@@ -229,7 +229,7 @@ export default function BuatPenitipan() {
                           inputMode="numeric"
                           value={item.jumlah}
                           onFocus={(e) => e.target.select()}                          
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-black text-center focus:ring-2 focus:ring-blue-600 outline-none bg-white"                          
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm text-black text-center focus:ring-2 focus:ring-blue-600 outline-none bg-white"                          
                           onChange={(e) => {
                             const val = e.target.value;
                             const cleanValue = val.replace(/[^0-9]/g, "");
@@ -267,7 +267,7 @@ export default function BuatPenitipan() {
                 <div className="mt-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2 duration-300">
                   <label className="block text-[10px] font-black text-slate-400 uppercase mb-2 tracking-widest">Detail Alamat Penjemputan</label>
                   <textarea required placeholder="Jl. Nama Jalan, No. Rumah, RT/RW, Kelurahan..."
-                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50"
+                    className="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm font-medium focus:ring-2 text-black focus:ring-blue-500 outline-none bg-slate-50"
                     rows={3} onChange={(e) => setAlamatJemput(e.target.value)} />
                 </div>
               )}

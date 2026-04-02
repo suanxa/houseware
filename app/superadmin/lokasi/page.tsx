@@ -146,7 +146,7 @@ export default function PantauLokasiGudang() {
                 <input
                   type="text"
                   placeholder="Cari gudang..."
-                  className="pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl w-full md:w-64 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
+                  className="pl-10 pr-4 py-2.5 bg-white border text-black border-slate-200 rounded-xl w-full md:w-64 shadow-sm focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />

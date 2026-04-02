@@ -136,11 +136,11 @@ function LaporanContent() {
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 no-print">
           <div className="md:col-span-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-900" size={16} />
             <input 
               type="text" 
               placeholder="Cari transaksi..." 
-              className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-900 text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>

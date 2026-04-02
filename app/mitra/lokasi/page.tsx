@@ -169,20 +169,20 @@ export default function KelolaLokasiMitra() {
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Nama Lokasi/Gudang</label>
-                    <input required placeholder="Gudang Sentosa Jaya" className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" onChange={(e) => setForm({...form, nama_lokasi: e.target.value})} />
+                    <input required placeholder="Gudang Sentosa Jaya" className="w-full p-3 bg-slate-50 border-none rounded-xl text-slate-900 text-sm focus:ring-2 focus:ring-blue-500 outline-none" onChange={(e) => setForm({...form, nama_lokasi: e.target.value})} />
                   </div>
                   <div>
                     <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Alamat Lengkap</label>
-                    <textarea required placeholder="Jl. Raya No. 123, Jakarta" className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24" onChange={(e) => setForm({...form, alamat: e.target.value})} />
+                    <textarea required placeholder="Jl. Raya No. 123, Jakarta" className="w-full p-3 bg-slate-50 border-none text-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none h-24" onChange={(e) => setForm({...form, alamat: e.target.value})} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Total Kapasitas (Slot)</label>
-                      <input required type="number" placeholder="100" className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" onChange={(e) => setForm({...form, kapasitas: e.target.value})} />
+                      <input required type="number" placeholder="100" className="w-full p-3 bg-slate-50 border-none text-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" onChange={(e) => setForm({...form, kapasitas: e.target.value})} />
                     </div>
                     <div>
                       <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Harga Sewa</label>
-                      <input required type="number" placeholder="50000" className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" onChange={(e) => setForm({...form, harga_per_hari: e.target.value})} />
+                      <input required type="number" placeholder="50000" className="w-full p-3 bg-slate-50 border-none text-slate-900 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 outline-none" onChange={(e) => setForm({...form, harga_per_hari: e.target.value})} />
                     </div>
                   </div>
                 </div>

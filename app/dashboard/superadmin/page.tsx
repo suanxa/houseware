@@ -131,11 +131,11 @@ export default function SuperAdminDashboard() {
             </h3>
             <div className="space-y-3">
               <Link href="/superadmin/users" className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200 group">
-                <span className="text-sm font-medium">Kelola Admin & Finance</span>
+                <span className="text-sm text-slate-600 font-medium">Kelola Admin & Finance</span>
                 <UserPlus size={16} className="text-slate-400 group-hover:text-red-600" />
               </Link>
               <Link href="/superadmin/mitra" className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200 group">
-                <span className="text-sm font-medium">Kelola Data Mitra</span>
+                <span className="text-sm text-slate-600 font-medium">Kelola Data Mitra</span>
                 <Store size={16} className="text-slate-400 group-hover:text-red-600" />
               </Link>
             </div>
@@ -149,11 +149,11 @@ export default function SuperAdminDashboard() {
             </h3>
             <div className="space-y-3">
               <Link href="/superadmin/transaksi" className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200 group">
-                <span className="text-sm font-medium">Monitoring Transaksi</span>
+                <span className="text-sm text-slate-600 font-medium">Monitoring Transaksi</span>
                 <Eye size={16} className="text-slate-400 group-hover:text-blue-600" />
               </Link>
               <Link href="/superadmin/lokasi" className="flex items-center justify-between p-3 hover:bg-slate-50 rounded-xl transition-all border border-transparent hover:border-slate-200 group">
-                <span className="text-sm font-medium">Pantau Lokasi Gudang</span>
+                <span className="text-sm text-slate-600 font-medium">Pantau Lokasi Gudang</span>
                 <MapPin size={16} className="text-slate-400 group-hover:text-blue-600" />
               </Link>
             </div>

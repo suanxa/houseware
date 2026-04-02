@@ -117,7 +117,7 @@ export default function MonitorLayananAdmin() {
                         <div className={`p-2 rounded-xl ${item.tipe === 'Penitipan' ? 'bg-blue-50 text-blue-600' : 'bg-orange-50 text-orange-600'}`}>
                           {item.tipe === 'Penitipan' ? <Package size={16}/> : <Truck size={16}/>}
                         </div>
-                        <span className="text-xs font-black uppercase tracking-tighter">{item.tipe}</span>
+                        <span className="text-xs font-black uppercase text-slate-400 tracking-tighter">{item.tipe}</span>
                       </div>
                     </td>
                     <td className="p-6">

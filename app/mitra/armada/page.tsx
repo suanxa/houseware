@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import Sidebar from "@/components/sidebar";
 import { 
   Truck, Plus, Trash2, 
-  Loader2, X 
+  Loader2, X, Banknote 
 } from "lucide-react";
 
 export default function KelolaArmadaMitra() {
@@ -15,11 +15,11 @@ export default function KelolaArmadaMitra() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   
-  // State untuk Form Input
   const [form, setForm] = useState({
     jenis_kendaraan: "",
     plat_nomor: "",
-    kapasitas: ""
+    kapasitas: "",
+    harga_sewa: "" // Kolom baru
   });
 
   useEffect(() => {
@@ -28,48 +28,57 @@ export default function KelolaArmadaMitra() {
 
   async function fetchArmada() {
     setLoading(true);
-    // 1. Ambil ID Mitra
-    const { data: mitra } = await supabase.from("mitra").select("id").eq("user_id", session?.user?.id).single();
-    
-    if (mitra) {
-      const { data } = await supabase.from("armada").select("*").eq("mitra_id", mitra.id);
-      setArmada(data || []);
+    try {
+      // 1. Ambil ID Mitra
+      const { data: mitra } = await supabase
+        .from("mitra")
+        .select("id")
+        .eq("user_id", session?.user?.id)
+        .single();
+      
+      if (mitra) {
+        // Ambil data, jika created_at belum ada, hapus bagian .order()
+        const { data, error } = await supabase
+          .from("armada")
+          .select("*")
+          .eq("mitra_id", mitra.id)
+          .order("id", { ascending: false }); // Gunakan ID sebagai urutan aman
+        
+        if (!error) setArmada(data || []);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
   async function handleAddArmada(e: React.FormEvent) {
     e.preventDefault();
     
-    // 1. Ambil data mitra
-    const { data: mitra, error: mitraError } = await supabase
+    const { data: mitra } = await supabase
       .from("mitra")
       .select("id")
       .eq("user_id", session?.user?.id)
       .single();
       
-    // 2. Cek apakah mitra ditemukan 
-    if (mitraError || !mitra) {
-      alert("Data mitra tidak ditemukan. Silahkan hubungi admin.");
-      return;
-    }
+    if (!mitra) return alert("Data mitra tidak ditemukan.");
 
-    // 3. Insert armada 
     const { error } = await supabase.from("armada").insert([{
       mitra_id: mitra.id,
       jenis_kendaraan: form.jenis_kendaraan,
       plat_nomor: form.plat_nomor,
       kapasitas: parseInt(form.kapasitas),
+      harga_sewa: parseInt(form.harga_sewa || "0"), // Insert harga sewa
       status: "tersedia"
     }]);
 
     if (error) {
-      alert("Gagal menambah armada: " + error.message);
+      alert("Gagal: " + error.message);
     } else {
-      // --- PERBAIKAN DI SINI ---
-      setShowModal(false); // Menutup modal otomatis setelah berhasil
-      setForm({ jenis_kendaraan: "", plat_nomor: "", kapasitas: "" }); // Reset form agar bersih kembali
-      fetchArmada(); // Refresh daftar data di layar
+      setShowModal(false);
+      setForm({ jenis_kendaraan: "", plat_nomor: "", kapasitas: "", harga_sewa: "" });
+      fetchArmada();
       alert("Armada berhasil ditambahkan!");
     }
   }
@@ -88,7 +97,7 @@ export default function KelolaArmadaMitra() {
         <header className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-2xl font-bold text-slate-900">Manajemen Armada 🚚</h1>
-            <p className="text-slate-500 text-sm">Daftarkan dan pantau status kendaraan angkut Anda.</p>
+            <p className="text-slate-500 text-sm">Kelola kendaraan dan tentukan harga sewa Anda.</p>
           </div>
           <button 
             onClick={() => setShowModal(true)}
@@ -104,10 +113,7 @@ export default function KelolaArmadaMitra() {
           ) : armada.length > 0 ? (
             armada.map((item) => (
               <div key={item.id} className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 relative group">
-                <button 
-                  onClick={() => deleteArmada(item.id)}
-                  className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
-                >
+                <button onClick={() => deleteArmada(item.id)} className="absolute top-4 right-4 text-slate-200 hover:text-red-500 transition-colors">
                   <Trash2 size={16} />
                 </button>
                 
@@ -121,11 +127,17 @@ export default function KelolaArmadaMitra() {
                   </div>
                 </div>
 
+                {/* Tampilan Harga Sewa */}
+                <div className="mb-4 p-3 bg-emerald-50 rounded-xl flex items-center justify-between border border-emerald-100">
+                  <span className="text-[10px] font-bold text-emerald-600 uppercase">Harga Sewa</span>
+                  <span className="text-sm font-black text-emerald-700">
+                    Rp {Number(item.harga_sewa || 0).toLocaleString('id-ID')}
+                  </span>
+                </div>
+
                 <div className="flex justify-between items-center pt-4 border-t border-slate-50">
-                  <span className="text-xs font-medium text-slate-500">Kapasitas: <span className="text-slate-900">{item.kapasitas} Kg</span></span>
-                  <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${
-                    item.status === 'tersedia' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                  }`}>
+                  <span className="text-xs font-medium text-slate-500">Cap: <span className="text-slate-900">{item.kapasitas} Kg</span></span>
+                  <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase ${item.status === 'tersedia' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'}`}>
                     {item.status}
                   </span>
                 </div>
@@ -138,46 +150,34 @@ export default function KelolaArmadaMitra() {
           )}
         </div>
 
-        {/* --- MODAL TAMBAH ARMADA --- */}
         {showModal && (
           <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl">
               <div className="p-6 border-b flex justify-between items-center bg-slate-50">
-                <h3 className="font-bold text-slate-900">Tambah Unit Armada</h3>
+                <h3 className="font-bold text-slate-900 text-sm">Tambah Unit Armada</h3>
                 <button onClick={() => setShowModal(false)}><X size={20} /></button>
               </div>
               <form onSubmit={handleAddArmada} className="p-6 space-y-4">
                 <div>
-                  <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Jenis Kendaraan</label>
-                  <input 
-                    required 
-                    placeholder="Contoh: Mitsubishi L300 / Truk Engkel"
-                    className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
-                    value={form.jenis_kendaraan}
-                    onChange={(e) => setForm({...form, jenis_kendaraan: e.target.value})}
-                  />
+                  <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Jenis Kendaraan</label>
+                  <input required className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="Contoh: Mitsubishi L300" onChange={(e) => setForm({...form, jenis_kendaraan: e.target.value})} />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Plat Nomor</label>
-                    <input 
-                      required 
-                      placeholder="B 1234 ABC"
-                      className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
-                      value={form.plat_nomor}
-                      onChange={(e) => setForm({...form, plat_nomor: e.target.value})}
-                    />
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Plat Nomor</label>
+                    <input required className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="B 1234 ABC" onChange={(e) => setForm({...form, plat_nomor: e.target.value})} />
                   </div>
                   <div>
-                    <label className="text-xs font-bold text-slate-400 uppercase mb-1 block">Kapasitas (Kg)</label>
-                    <input 
-                      required 
-                      type="number"
-                      placeholder="1000"
-                      className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900 text-slate-900"
-                      value={form.kapasitas}
-                      onChange={(e) => setForm({...form, kapasitas: e.target.value})}
-                    />
+                    <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Kapasitas (Kg)</label>
+                    <input required type="number" className="w-full p-3 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="1000" onChange={(e) => setForm({...form, kapasitas: e.target.value})} />
+                  </div>
+                </div>
+                {/* Input Harga Sewa Baru */}
+                <div>
+                  <label className="text-[10px] font-bold text-slate-400 uppercase mb-1 block">Harga Sewa (Per Jasa)</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">Rp</span>
+                    <input required type="number" className="w-full p-3 pl-10 bg-slate-50 border-none rounded-xl text-sm outline-none focus:ring-2 focus:ring-slate-900" placeholder="150000" onChange={(e) => setForm({...form, harga_sewa: e.target.value})} />
                   </div>
                 </div>
                 <button type="submit" className="w-full bg-slate-900 text-white py-3 rounded-xl font-bold mt-4 hover:bg-slate-800 transition-all">Simpan Armada</button>

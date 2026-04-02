@@ -41,29 +41,48 @@ export default function RiwayatPesanan() {
     if (session?.user?.id) fetchAllOrders();
   }, [session]);
 
-  async function fetchAllOrders() {
-    setLoading(true);
-    try {
-      const { data: penitipan } = await supabase
-        .from("penitipan_barang")
-        .select(`*, jenis_barang:jenis_barang_id (nama_jenis, harga_per_hari)`)
-        .eq("user_id", session?.user?.id);
+async function fetchAllOrders() {
+  setLoading(true);
+  try {
+    // Ambil data penitipan
+    const { data: penitipan, error: errorPenitipan } = await supabase
+      .from("penitipan_barang")
+      .select(`
+        *,
+        jenis_barang:jenis_barang_id (
+          nama_jenis, 
+          harga_per_hari
+        )
+      `)
+      .eq("user_id", session?.user?.id);
 
-      const { data: angkutan } = await supabase
-        .from("angkutan_barang")
-        .select(`*`)
-        .eq("user_id", session?.user?.id);
-
-      const combined = [
-        ...(penitipan?.map(p => ({ ...p, tipe: 'Penitipan' })) || []),
-        ...(angkutan?.map(a => ({ ...a, tipe: 'Angkutan' })) || [])
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-
-      setAllOrders(combined);
-    } finally {
-      setLoading(false);
+    if (errorPenitipan) {
+      console.error("Error Fetch Penitipan:", errorPenitipan.message);
     }
+
+    // Ambil data angkutan
+    const { data: angkutan, error: errorAngkutan } = await supabase
+      .from("angkutan_barang")
+      .select(`*`)
+      .eq("user_id", session?.user?.id);
+
+    if (errorAngkutan) {
+      console.error("Error Fetch Angkutan:", errorAngkutan.message);
+    }
+
+    // Gabungkan data
+    const combined = [
+      ...(penitipan?.map(p => ({ ...p, tipe: 'Penitipan' })) || []),
+      ...(angkutan?.map(a => ({ ...a, tipe: 'Angkutan' })) || [])
+    ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+    setAllOrders(combined);
+  } catch (err) {
+    console.error("System Error:", err);
+  } finally {
+    setLoading(false);
   }
+}
 
   const hitungDurasi = (mulai: string, selesai: string) => {
     const d1 = new Date(mulai);
@@ -71,17 +90,27 @@ export default function RiwayatPesanan() {
     return Math.ceil(Math.abs(d2.getTime() - d1.getTime()) / (1000 * 60 * 60 * 24)) || 1;
   };
 
-  const getDetailBiaya = (order: any) => {
-    if (order.tipe === 'Penitipan') {
-      const durasi = hitungDurasi(order.tanggal_mulai, order.tanggal_selesai);
-      const sewa = (order.jenis_barang?.harga_per_hari || 0) * (order.jumlah || 1) * durasi;
-      const ongkir = Number(order.ongkir_final) || 0;
-      return { total: sewa + ongkir, rincian: `Sewa ${durasi} Hari + Jemput` };
-    } else {
-      const total = Number(order.total_biaya) || 0;
-      return { total, rincian: `Layanan Angkut (${order.estimasi_jarak_km} KM)` };
-    }
-  };
+ const getDetailBiaya = (order: any) => {
+  if (order.tipe === 'Penitipan') {
+    const durasi = hitungDurasi(order.tanggal_mulai, order.tanggal_selesai);
+    const harga = order.jenis_barang?.harga_per_hari || 0;
+    const jumlah = order.jumlah || 1;
+    const sewa = harga * jumlah * durasi;
+    const ongkir = Number(order.ongkir_final) || 0;
+    
+    // Gunakan double bang (!!) atau check manual agar aman dari null
+    const isJemput = order.butuh_jemput === true || order.butuh_jemput === "true";
+    const teksJemput = isJemput ? " + Jemput" : ""; 
+    
+    return { 
+      total: sewa + ongkir, 
+      rincian: `Sewa ${durasi} Hari${teksJemput}` 
+    };
+  } else {
+    const total = Number(order.total_biaya) || 0;
+    return { total, rincian: `Layanan Angkut (${order.estimasi_jarak_km || 0} KM)` };
+  }
+};
 
   const handleKonfirmasiBayar = async () => {
     if (!selectedOrder || !file) return alert("Lengkapi data!");

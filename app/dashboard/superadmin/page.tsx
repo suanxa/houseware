@@ -18,6 +18,26 @@ export default function SuperAdminDashboard() {
 
   useEffect(() => {
     fetchSuperAdminData();
+
+    // --- LOGIKA REAL-TIME SUBSCRIPTION ---
+    const channel = supabase
+      .channel("pendaftaran-baru")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "users" },
+        (payload) => {
+          // Jika ada user baru, masukkan ke daftar teratas dan hapus yang paling bawah (limit 5)
+          setRecentLogs((prevLogs) => [payload.new, ...prevLogs.slice(0, 4)]);
+          
+          // Update juga jumlah total user secara otomatis
+          setStats((prev) => ({ ...prev, users: prev.users + 1 }));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   async function fetchSuperAdminData() {

@@ -169,7 +169,7 @@ export default function FinanceDashboard() {
               <h3 className="text-xl font-bold text-slate-900 mb-2">Laporan</h3>
               <p className="text-slate-500 text-sm mb-6">Rekapitulasi seluruh transaksi dalam format PDF.</p>
               <Link 
-                href="/finance/laporan" 
+                href="/finance/laporan?action=print" 
                 className="inline-flex items-center space-x-2 bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-slate-800 transition-all active:scale-95"
               >
                 <span>Unduh Laporan</span>

@@ -224,14 +224,18 @@ export default function BuatPenitipan() {
                       <div className="md:col-span-2">
                         <label className="block text-[10px] font-bold text-slate-400 uppercase mb-1 text-center">Jumlah</label>
                         <input 
-                          required 
-                          type="number" 
-                          min="1" 
+                          required                         
+                          type="text"                           
+                          inputMode="numeric"
                           value={item.jumlah}
-                          // --- FIX: SELECT ALL SAAT FOKUS ---
-                          onFocus={(e) => e.target.select()}
-                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-black text-center focus:ring-2 focus:ring-blue-600 outline-none bg-white"
-                          onChange={(e) => updateItem(index, "jumlah", e.target.value)} 
+                          onFocus={(e) => e.target.select()}                          
+                          className="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-black text-center focus:ring-2 focus:ring-blue-600 outline-none bg-white"                          
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            const cleanValue = val.replace(/[^0-9]/g, "");
+                            updateItem(index, "jumlah", cleanValue);
+                          }} 
+                          placeholder="0"
                         />
                       </div>
                       <div className="md:col-span-1 flex justify-end">

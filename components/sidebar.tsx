@@ -51,7 +51,7 @@ export default function Sidebar() {
     admin: [
       { name: "Dashboard", href: "/dashboard/admin", icon: LayoutDashboard },
       { name: "Kategori", href: "/admin/jenis-barang", icon: Package },
-      { name: "Manajemen User", href: "/admin/users", icon: Users },
+      { name: "Manajemen Pelanggan", href: "/admin/users", icon: Users },
       { name: "Monitor Layanan", href: "/admin/monitor", icon: Settings },
       
     ],
